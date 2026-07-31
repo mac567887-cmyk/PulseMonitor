@@ -12,3 +12,10 @@ xcuserdata/
 .idea/
 *.sqlite
 *.sqlite-journal
+.build/
+.swiftpm-cache/
+build/
+Tools/
+crash.ips
+*.ips
+run-*.log

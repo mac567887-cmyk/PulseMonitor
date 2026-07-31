@@ -5,7 +5,7 @@ import Observation
 @Observable
 public final class HistoryViewModel {
     public let historyRepository: HistoryRepository
-    public let settings: AppSettings
+    public var settings: AppSettings
     public var points: [HistoryRepository.HistoryPoint] = []
     public var selectedRetention: HistoryRetention
 

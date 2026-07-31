@@ -1,5 +1,4 @@
 import Foundation
-import AppKit
 import Darwin
 
 /// Exports diagnostic reports as JSON, CSV, or printable PDF.
@@ -91,20 +90,43 @@ public actor ReportExporter {
         ---------------
         \(report.recommendations.map { "• \($0)" }.joined(separator: "\n"))
         """
-        let data = Data(content.utf8)
-        // Lightweight text-based PDF substitute for environments without print panel interaction.
-        // Prefer true PDF via NSTextView when AppKit is available on main actor.
-        let pdf = Self.simplePDF(from: content)
-        try (pdf ?? data).write(to: url)
-    }
-
-    private static func simplePDF(from text: String) -> Data? {
-        let pageWidth: CGFloat = 612
-        let pageHeight: CGFloat = 792
-        let view = NSTextView(frame: NSRect(x: 0, y: 0, width: pageWidth - 72, height: pageHeight - 72))
-        view.string = text
-        view.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)
-        return view.dataWithPDF(inside: view.bounds)
+        // Minimal valid single-page PDF embedding the text as a stream.
+        let escaped = content
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "(", with: "\\(")
+            .replacingOccurrences(of: ")", with: "\\)")
+        let lines = escaped.components(separatedBy: "\n")
+        var textOps = "BT /F1 10 Tf 50 740 Td 14 TL\n"
+        for (idx, line) in lines.prefix(48).enumerated() {
+            if idx == 0 {
+                textOps += "(\(line)) Tj\n"
+            } else {
+                textOps += "T* (\(line)) Tj\n"
+            }
+        }
+        textOps += "ET"
+        let stream = textOps
+        let objs: [String] = [
+            "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
+            "2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
+            "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n",
+            "4 0 obj<< /Length \(stream.utf8.count) >>stream\n\(stream)\nendstream\nendobj\n",
+            "5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>endobj\n"
+        ]
+        var pdf = "%PDF-1.4\n"
+        var offsets: [Int] = [0]
+        for obj in objs {
+            offsets.append(pdf.utf8.count)
+            pdf += obj
+        }
+        let xref = pdf.utf8.count
+        pdf += "xref\n0 \(objs.count + 1)\n"
+        pdf += "0000000000 65535 f \n"
+        for off in offsets.dropFirst() {
+            pdf += String(format: "%010d 00000 n \n", off)
+        }
+        pdf += "trailer<< /Size \(objs.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n"
+        try Data(pdf.utf8).write(to: url)
     }
 
     private static func modelIdentifier() -> String {

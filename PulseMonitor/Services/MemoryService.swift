@@ -21,7 +21,7 @@ public actor MemoryService: MetricProviding {
             }
         }
 
-        let pageSize = UInt64(vm_kernel_page_size)
+        let pageSize = UInt64(sysconf(Int32(_SC_PAGESIZE)))
         var total: UInt64 = 0
         var size = MemoryLayout<UInt64>.size
         sysctlbyname("hw.memsize", &total, &size, nil, 0)
@@ -68,16 +68,17 @@ public actor MemoryService: MetricProviding {
     private func startPressureMonitor() {
         let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .global(qos: .utility))
         source.setEventHandler { [weak self] in
-            let event = source.data
+            let raw = source.data.rawValue
             Task { [weak self] in
-                await self?.updatePressure(event)
+                await self?.updatePressure(raw)
             }
         }
         source.resume()
         pressureSource = source
     }
 
-    private func updatePressure(_ event: DispatchSource.MemoryPressureEvent) {
+    private func updatePressure(_ raw: UInt) {
+        let event = DispatchSource.MemoryPressureEvent(rawValue: raw)
         if event.contains(.critical) {
             pressure = .critical
         } else if event.contains(.warning) {

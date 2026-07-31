@@ -1,4 +1,5 @@
 import Darwin
+import LibprocBridge
 
 /// Swift bindings for libproc symbols used by ProcessService.
 public enum Libproc {

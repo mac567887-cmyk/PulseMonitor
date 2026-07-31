@@ -4,7 +4,7 @@ import SQLite3
 /// SQLite-backed historical metrics store with configurable retention.
 public actor HistoryRepository {
     private var db: OpaquePointer?
-    private let settings: AppSettings
+    nonisolated(unsafe) private let settings: AppSettings
     private let fileURL: URL
 
     public init(settings: AppSettings, fileURL: URL? = nil) {
@@ -14,10 +14,6 @@ public actor HistoryRepository {
             .appendingPathComponent("history.sqlite")
         self.fileURL = fileURL ?? defaultURL
         Task { await self.open() }
-    }
-
-    deinit {
-        if let db { sqlite3_close(db) }
     }
 
     private func open() {

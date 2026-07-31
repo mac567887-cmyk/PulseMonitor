@@ -5,7 +5,7 @@ import Observation
 @Observable
 public final class DashboardViewModel {
     public let collector: MetricsCollector
-    public let settings: AppSettings
+    public var settings: AppSettings
 
     public init(collector: MetricsCollector, settings: AppSettings) {
         self.collector = collector

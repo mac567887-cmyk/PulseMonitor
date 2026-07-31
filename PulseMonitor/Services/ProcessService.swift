@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Darwin
+import LibprocBridge
 
 /// Enumerates running processes using libproc / BSD APIs.
 public actor ProcessService {
@@ -59,7 +60,7 @@ public actor ProcessService {
                     memoryBytes: memory,
                     threadCount: threads,
                     architecture: arch,
-                    developer: developer.map(String.init),
+                    developer: developer.map { String($0) },
                     codeSignatureStatus: path == nil ? "Unknown" : "Present",
                     energyImpact: cpuPercent * 1.2,
                     diskBytesPerSec: nil,
@@ -96,7 +97,7 @@ public actor ProcessService {
         }
         guard filled > 0 else { return [] }
         let count = min(Int(filled), buffer.count)
-        return buffer.prefix(count).map(Int32.init).filter { $0 > 0 }
+        return Array(buffer.prefix(count)).map { Int32($0) }.filter { $0 > 0 }
     }
 
     private static func processName(pid: Int32) -> String? {

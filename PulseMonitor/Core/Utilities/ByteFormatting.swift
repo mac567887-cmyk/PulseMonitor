@@ -2,15 +2,11 @@ import Foundation
 
 /// Shared formatting helpers for bytes, rates, temperatures, and percentages.
 public enum Formatters {
-    private static let byteFormatter: ByteCountFormatter = {
+    public static func bytes(_ value: UInt64) -> String {
         let f = ByteCountFormatter()
         f.countStyle = .memory
         f.allowsNonnumericFormatting = false
-        return f
-    }()
-
-    public static func bytes(_ value: UInt64) -> String {
-        byteFormatter.string(fromByteCount: Int64(clamping: value))
+        return f.string(fromByteCount: Int64(clamping: value))
     }
 
     public static func bytesPerSecond(_ value: Double) -> String {
