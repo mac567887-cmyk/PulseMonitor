@@ -22,9 +22,15 @@ struct PulseMonitorApp: App {
                 .frame(width: 520, height: 480)
         }
 
+        // The setter must ignore no-op writes: MenuBarExtra pushes `isInserted` back on
+        // every render, and @Observable notifies on each set even when the value is
+        // unchanged, which would invalidate this body in a loop.
         MenuBarExtra(isInserted: Binding(
             get: { container.settings.showMenuBarExtra },
-            set: { container.settings.showMenuBarExtra = $0 }
+            set: { newValue in
+                guard container.settings.showMenuBarExtra != newValue else { return }
+                container.settings.showMenuBarExtra = newValue
+            }
         )) {
             MenuBarView(container: container)
         } label: {

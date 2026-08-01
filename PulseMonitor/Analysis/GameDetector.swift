@@ -2,17 +2,19 @@ import Foundation
 
 /// Detects games and compatibility/emulator runtimes and prepares game-focused analysis.
 public actor GameDetector {
+    /// Stored pre-lowercased; this list is matched against every running process on
+    /// each sampling tick, so lowercasing here rather than per comparison matters.
     private static let knownNames: [String] = [
-        "Steam", "Minecraft", "java", "Heroic", "Epic Games", "Whisky", "Wine", "CrossOver",
-        "Ryujinx", "RPCS3", "PCSX2", "Cemu", "Dolphin", "Yuzu", "Suyu", "Sudachi",
-        "OpenEmu", "Parallels", "Battle.net", "Riot Client", "LeagueClient", "VALORANT",
-        "cs2", "dota2", "Genshin", "Roblox", "Unity", "Unreal"
+        "steam", "minecraft", "java", "heroic", "epic games", "whisky", "wine", "crossover",
+        "ryujinx", "rpcs3", "pcsx2", "cemu", "dolphin", "yuzu", "suyu", "sudachi",
+        "openemu", "parallels", "battle.net", "riot client", "leagueclient", "valorant",
+        "cs2", "dota2", "genshin", "roblox", "unity", "unreal"
     ]
 
     private static let pathHints: [String] = [
         "/Steam/", "/Minecraft/", "/Heroic/", "/Epic Games/", "/Whisky/", "/Wine/",
         "/CrossOver/", "/Ryujinx/", "/RPCS3/", "/PCSX2/", "/Cemu/", "/Dolphin/",
-        "/Applications/Games/", ".app/Contents/MacOS/"
+        "/Applications/Games/"
     ]
 
     public init() {}
@@ -64,10 +66,16 @@ public actor GameDetector {
     }
 
     nonisolated public static func isLikelyGame(name: String, path: String?, bundleID: String?) -> Bool {
-        let haystack = [name, path ?? "", bundleID ?? ""].joined(separator: " ").lowercased()
-        if knownNames.contains(where: { haystack.contains($0.lowercased()) }) { return true }
-        if pathHints.contains(where: { (path ?? "").contains($0) }) { return true }
-        if let bundleID, bundleID.lowercased().contains("game") { return true }
-        return false
+        if let path, pathHints.contains(where: { path.contains($0) }) { return true }
+
+        var haystack = name.lowercased()
+        if let bundleID {
+            let lowered = bundleID.lowercased()
+            if lowered.contains("game") { return true }
+            haystack += " " + lowered
+        }
+        if let path { haystack += " " + path.lowercased() }
+
+        return knownNames.contains { haystack.contains($0) }
     }
 }

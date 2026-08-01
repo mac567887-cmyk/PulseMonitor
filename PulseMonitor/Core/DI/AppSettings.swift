@@ -7,34 +7,64 @@ import SwiftUI
 @Observable
 public final class AppSettings {
     public var refreshIntervalSeconds: Double {
-        didSet { defaults.set(refreshIntervalSeconds, forKey: Keys.refresh) }
+        didSet {
+            guard oldValue != refreshIntervalSeconds else { return }
+            defaults.set(refreshIntervalSeconds, forKey: Keys.refresh)
+        }
     }
     public var graphDurationSeconds: Double {
-        didSet { defaults.set(graphDurationSeconds, forKey: Keys.graphDuration) }
+        didSet {
+            guard oldValue != graphDurationSeconds else { return }
+            defaults.set(graphDurationSeconds, forKey: Keys.graphDuration)
+        }
     }
     public var historyRetention: HistoryRetention {
-        didSet { defaults.set(historyRetention.rawValue, forKey: Keys.retention) }
+        didSet {
+            guard oldValue != historyRetention else { return }
+            defaults.set(historyRetention.rawValue, forKey: Keys.retention)
+        }
     }
     public var cpuAlertThreshold: Double {
-        didSet { defaults.set(cpuAlertThreshold, forKey: Keys.cpuAlert) }
+        didSet {
+            guard oldValue != cpuAlertThreshold else { return }
+            defaults.set(cpuAlertThreshold, forKey: Keys.cpuAlert)
+        }
     }
     public var temperatureAlertC: Double {
-        didSet { defaults.set(temperatureAlertC, forKey: Keys.tempAlert) }
+        didSet {
+            guard oldValue != temperatureAlertC else { return }
+            defaults.set(temperatureAlertC, forKey: Keys.tempAlert)
+        }
     }
     public var memoryPressureAlerts: Bool {
-        didSet { defaults.set(memoryPressureAlerts, forKey: Keys.memAlerts) }
+        didSet {
+            guard oldValue != memoryPressureAlerts else { return }
+            defaults.set(memoryPressureAlerts, forKey: Keys.memAlerts)
+        }
     }
     public var showMenuBarExtra: Bool {
-        didSet { defaults.set(showMenuBarExtra, forKey: Keys.menuBar) }
+        didSet {
+            guard oldValue != showMenuBarExtra else { return }
+            defaults.set(showMenuBarExtra, forKey: Keys.menuBar)
+        }
     }
     public var menuBarMetric: MenuBarMetric {
-        didSet { defaults.set(menuBarMetric.rawValue, forKey: Keys.menuBarMetric) }
+        didSet {
+            guard oldValue != menuBarMetric else { return }
+            defaults.set(menuBarMetric.rawValue, forKey: Keys.menuBarMetric)
+        }
     }
     public var appearance: AppAppearance {
-        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
+        didSet {
+            guard oldValue != appearance else { return }
+            defaults.set(appearance.rawValue, forKey: Keys.appearance)
+        }
     }
     public var notificationsEnabled: Bool {
-        didSet { defaults.set(notificationsEnabled, forKey: Keys.notifications) }
+        didSet {
+            guard oldValue != notificationsEnabled else { return }
+            defaults.set(notificationsEnabled, forKey: Keys.notifications)
+        }
     }
 
     public enum MenuBarMetric: String, CaseIterable, Identifiable, Codable {

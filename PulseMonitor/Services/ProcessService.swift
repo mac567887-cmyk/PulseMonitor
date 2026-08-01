@@ -8,6 +8,18 @@ public actor ProcessService {
     /// Previous CPU time samples keyed by PID for differential usage.
     private var previousCPUTime: [Int32: Double] = [:]
     private var previousSampleDate: Date?
+    private var metadataCache: [Int32: Metadata] = [:]
+
+    /// Per-process values that cannot change over a PID's lifetime, so they are read
+    /// once instead of on every sampling tick.
+    private struct Metadata {
+        let name: String
+        let path: String?
+        let ppid: Int32
+        let bundleIdentifier: String?
+        let developer: String?
+        let isGame: Bool
+    }
 
     public init() {}
 
@@ -27,11 +39,33 @@ public actor ProcessService {
         )
 
         let coreCount = Double(ProcessInfo.processInfo.activeProcessorCount)
+        let arch = Self.architecture()
+        var liveMetadata: [Int32: Metadata] = [:]
+        liveMetadata.reserveCapacity(pids.count)
 
         for pid in pids {
-            guard let name = Self.processName(pid: pid) else { continue }
-            let path = Self.processPath(pid: pid)
-            let totalCPUTime = Self.totalCPUTimeSeconds(pid: pid)
+            guard let task = Self.taskInfo(pid: pid) else { continue }
+
+            let meta: Metadata
+            if let cached = metadataCache[pid] {
+                meta = cached
+            } else {
+                guard let name = Self.processName(pid: pid) else { continue }
+                let path = Self.processPath(pid: pid)
+                let app = runningApps[pid]
+                let bundleID = app?.bundleIdentifier
+                meta = Metadata(
+                    name: app?.localizedName ?? name,
+                    path: path,
+                    ppid: Self.parentPID(pid: pid),
+                    bundleIdentifier: bundleID,
+                    developer: bundleID?.split(separator: ".").prefix(2).joined(separator: ".").description,
+                    isGame: GameDetector.isLikelyGame(name: name, path: path, bundleID: bundleID)
+                )
+            }
+            liveMetadata[pid] = meta
+
+            let totalCPUTime = Double(task.pti_total_user + task.pti_total_system) / 1_000_000_000.0
             nextCPU[pid] = totalCPUTime
 
             let cpuPercent: Double
@@ -41,37 +75,31 @@ public actor ProcessService {
                 cpuPercent = 0
             }
 
-            let memory = Self.residentMemory(pid: pid)
-            let threads = Self.threadCount(pid: pid)
-            let ppid = Self.parentPID(pid: pid)
-            let arch = Self.architecture()
-            let app = runningApps[pid]
-            let developer = app?.bundleIdentifier?.split(separator: ".").prefix(2).joined(separator: ".")
-            let isGame = GameDetector.isLikelyGame(name: name, path: path, bundleID: app?.bundleIdentifier)
-
             results.append(
                 ProcessInfoModel(
                     pid: pid,
-                    ppid: ppid,
-                    name: app?.localizedName ?? name,
-                    bundleIdentifier: app?.bundleIdentifier,
-                    executablePath: path,
+                    ppid: meta.ppid,
+                    name: meta.name,
+                    bundleIdentifier: meta.bundleIdentifier,
+                    executablePath: meta.path,
                     cpuPercent: cpuPercent,
-                    memoryBytes: memory,
-                    threadCount: threads,
+                    memoryBytes: UInt64(task.pti_resident_size),
+                    threadCount: Int(task.pti_threadnum),
                     architecture: arch,
-                    developer: developer.map { String($0) },
-                    codeSignatureStatus: path == nil ? "Unknown" : "Present",
+                    developer: meta.developer,
+                    codeSignatureStatus: meta.path == nil ? "Unknown" : "Present",
                     energyImpact: cpuPercent * 1.2,
                     diskBytesPerSec: nil,
                     networkBytesPerSec: nil,
                     gpuPercent: nil,
-                    isGame: isGame,
+                    isGame: meta.isGame,
                     user: nil
                 )
             )
         }
 
+        // Replacing the cache wholesale drops entries for exited PIDs.
+        metadataCache = liveMetadata
         previousCPUTime = nextCPU
         previousSampleDate = now
         return results.sorted { $0.cpuPercent > $1.cpuPercent }
@@ -118,34 +146,16 @@ public actor ProcessService {
         return String(cString: path)
     }
 
-    private static func residentMemory(pid: Int32) -> UInt64 {
+    /// Single task-info read per process; CPU time, resident size, and thread count
+    /// all come from this one syscall.
+    private static func taskInfo(pid: Int32) -> proc_taskinfo? {
         var info = proc_taskinfo()
         let size = Int32(MemoryLayout<proc_taskinfo>.stride)
         let result = withUnsafeMutablePointer(to: &info) {
             Libproc.pidInfo(pid, PROC_PIDTASKINFO, 0, $0, size)
         }
-        guard result == size else { return 0 }
-        return UInt64(info.pti_resident_size)
-    }
-
-    private static func threadCount(pid: Int32) -> Int {
-        var info = proc_taskinfo()
-        let size = Int32(MemoryLayout<proc_taskinfo>.stride)
-        let result = withUnsafeMutablePointer(to: &info) {
-            Libproc.pidInfo(pid, PROC_PIDTASKINFO, 0, $0, size)
-        }
-        guard result == size else { return 0 }
-        return Int(info.pti_threadnum)
-    }
-
-    private static func totalCPUTimeSeconds(pid: Int32) -> Double {
-        var info = proc_taskinfo()
-        let size = Int32(MemoryLayout<proc_taskinfo>.stride)
-        let result = withUnsafeMutablePointer(to: &info) {
-            Libproc.pidInfo(pid, PROC_PIDTASKINFO, 0, $0, size)
-        }
-        guard result == size else { return 0 }
-        return Double(info.pti_total_user + info.pti_total_system) / 1_000_000_000.0
+        guard result == size else { return nil }
+        return info
     }
 
     private static func parentPID(pid: Int32) -> Int32 {
