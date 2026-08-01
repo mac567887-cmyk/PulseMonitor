@@ -17,6 +17,12 @@ public final class MetricsCollector {
     public private(set) var networkOutHistory: [Double] = []
     public private(set) var temperatureHistory: [Double] = []
 
+    /// Full snapshots kept in memory so the insight engine can correlate fields
+    /// the summary database does not store. Capped at roughly thirty minutes of
+    /// one-second sampling, which costs a couple of megabytes.
+    public private(set) var recentSamples: [SystemMetrics] = []
+    private let recentSampleLimit = 1_800
+
     private let settings: AppSettings
     private let cpuService: CPUService
     private let gpuService: GPUService
@@ -31,8 +37,21 @@ public final class MetricsCollector {
     private let gameDetector: GameDetector
     private let alertService: AlertService
 
+    /// Set after construction because these depend on the collector existing.
+    public weak var automationEngine: AutomationEngine?
+    public weak var eventLog: EventLogService?
+
     private var loopTask: Task<Void, Never>?
+    private var activityToken: NSObjectProtocol?
     private var previousMetrics: SystemMetrics?
+    private var lastProcessScan: Date?
+
+    /// How often the full process table is rebuilt. Never faster than the
+    /// sampling interval, and never slower than needed to keep the Processes
+    /// view feeling live.
+    private var processScanInterval: TimeInterval {
+        max(settings.refreshIntervalSeconds, 3.0)
+    }
     private let historyLimit = 120
 
     public init(
@@ -68,6 +87,15 @@ public final class MetricsCollector {
     public func start() {
         guard !isRunning else { return }
         isRunning = true
+
+        // Without this, App Nap suspends the sampling loop whenever the window is
+        // occluded, leaving gaps in history exactly when the user is busy in
+        // another app. Sleep and display sleep are deliberately not blocked.
+        activityToken = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated],
+            reason: "Continuous system metrics sampling"
+        )
+
         loopTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.tick()
@@ -81,6 +109,10 @@ public final class MetricsCollector {
         isRunning = false
         loopTask?.cancel()
         loopTask = nil
+        if let activityToken {
+            ProcessInfo.processInfo.endActivity(activityToken)
+            self.activityToken = nil
+        }
     }
 
     private func tick() async {
@@ -91,9 +123,22 @@ public final class MetricsCollector {
         async let storage = storageService.sample()
         async let network = networkService.sample()
         async let battery = batteryService.sample()
-        async let processes = processService.listProcesses()
 
-        let (cpuM, gpuM, memM, thermM, storM, netM, battM, procs) = await (cpu, gpu, memory, thermal, storage, network, battery, processes)
+        let (cpuM, gpuM, memM, thermM, storM, netM, battM) = await (cpu, gpu, memory, thermal, storage, network, battery)
+
+        // Enumerating every process means a proc_pidinfo call per PID, which
+        // dominates the cost of a tick. Process rows do not need to refresh at
+        // the full sampling rate, so they run on their own slower cadence and
+        // the previous list is reused in between.
+        let procs: [ProcessInfoModel]
+        let now = Date()
+        if lastProcessScan.map({ now.timeIntervalSince($0) >= processScanInterval }) ?? true {
+            procs = await processService.listProcesses()
+            lastProcessScan = now
+            latestProcesses = procs
+        } else {
+            procs = latestProcesses
+        }
 
         if let ws = procs.first(where: { $0.name == "WindowServer" }) {
             await gpuService.updateWindowServerCPU(ws.cpuPercent)
@@ -123,7 +168,6 @@ public final class MetricsCollector {
         let games = await gameDetector.detect(in: procs)
 
         latestMetrics = metrics
-        latestProcesses = procs
         latestAnalysis = analysis
         detectedGames = games
 
@@ -135,6 +179,16 @@ public final class MetricsCollector {
         if let temp = thermM.cpuTemperatureC ?? thermM.batteryTemperatureC {
             appendHistory(temp, to: &temperatureHistory)
         }
+
+        recentSamples.append(metrics)
+        if recentSamples.count > recentSampleLimit {
+            recentSamples.removeFirst(recentSamples.count - recentSampleLimit)
+        }
+
+        if battM.isPresent, let percent = battM.chargePercent {
+            eventLog?.noteBattery(percent: Int(percent), isCharging: battM.isCharging)
+        }
+        automationEngine?.evaluate(metrics: metrics, processes: procs)
 
         await historyRepository.insert(metrics: metrics)
         await alertService.evaluate(metrics: metrics, analysis: analysis)

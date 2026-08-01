@@ -40,6 +40,14 @@ public actor AlertService {
         }
     }
 
+    /// Delivered on behalf of an automation rule. Uses the rule's identity as the
+    /// cooldown key so two different rules never suppress one another.
+    public func sendAutomationNotification(title: String, body: String) async {
+        let enabled = await MainActor.run { settings.notificationsEnabled }
+        guard enabled else { return }
+        await notify(key: "automation-\(title)", title: title, body: body)
+    }
+
     private func notify(key: String, title: String, body: String) async {
         let now = Date()
         if let last = lastAlertAt[key], now.timeIntervalSince(last) < cooldown { return }

@@ -21,6 +21,18 @@ public final class AppContainer {
     public let alertService: AlertService
     public let reportExporter: ReportExporter
 
+    // Version 2 services
+    public let capabilityService: CapabilityService
+    public let smcService: SMCService
+    public let systemControlService: SystemControlService
+    public let appManagerService: AppManagerService
+    public let benchmarkService: BenchmarkService
+    public let eventLogService: EventLogService
+    public let powerProfileService: PowerProfileService
+    public let automationEngine: AutomationEngine
+    public let insightEngine: InsightEngine
+    public let autoOptimizer: AutoOptimizer
+
     public let dashboardViewModel: DashboardViewModel
     public let cpuViewModel: CPUViewModel
     public let gpuViewModel: GPUViewModel
@@ -34,6 +46,13 @@ public final class AppContainer {
     public let gamesViewModel: GamesViewModel
     public let settingsViewModel: SettingsViewModel
     public let analysisViewModel: AnalysisViewModel
+
+    public let controlCenterViewModel: ControlCenterViewModel
+    public let benchmarkViewModel: BenchmarkViewModel
+    public let optimizerViewModel: OptimizerViewModel
+    public let appManagerViewModel: AppManagerViewModel
+    public let insightsViewModel: InsightsViewModel
+    public let overlayViewModel: OverlayViewModel
 
     public init() {
         let settings = AppSettings()
@@ -97,6 +116,45 @@ public final class AppContainer {
         self.gamesViewModel = GamesViewModel(collector: collector, gameDetector: games)
         self.settingsViewModel = SettingsViewModel(settings: settings)
         self.analysisViewModel = AnalysisViewModel(collector: collector)
+
+        // Version 2 wiring.
+        let capabilities = CapabilityService()
+        let smc = SMCService()
+        let control = SystemControlService(capabilityService: capabilities)
+        let appManager = AppManagerService()
+        let benchmarks = BenchmarkService()
+        let eventLog = EventLogService()
+        let profiles = PowerProfileService(settings: settings)
+        let automation = AutomationEngine(
+            settings: settings, eventLog: eventLog, profiles: profiles, alerts: alerts
+        )
+
+        self.capabilityService = capabilities
+        self.smcService = smc
+        self.systemControlService = control
+        self.appManagerService = appManager
+        self.benchmarkService = benchmarks
+        self.eventLogService = eventLog
+        self.powerProfileService = profiles
+        self.automationEngine = automation
+        self.insightEngine = InsightEngine()
+        self.autoOptimizer = AutoOptimizer()
+
+        self.controlCenterViewModel = ControlCenterViewModel(
+            controlService: control, capabilityService: capabilities, smcService: smc
+        )
+        self.benchmarkViewModel = BenchmarkViewModel(service: benchmarks)
+        self.optimizerViewModel = OptimizerViewModel(
+            collector: collector, controlService: control, optimizer: AutoOptimizer()
+        )
+        self.appManagerViewModel = AppManagerViewModel(service: appManager)
+        self.insightsViewModel = InsightsViewModel(
+            collector: collector, history: history, eventLog: eventLog, engine: InsightEngine()
+        )
+        self.overlayViewModel = OverlayViewModel(collector: collector, settings: settings)
+
+        collector.automationEngine = automation
+        collector.eventLog = eventLog
     }
 
     public func start() {

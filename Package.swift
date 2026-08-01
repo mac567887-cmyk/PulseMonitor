@@ -27,6 +27,8 @@ let package = Package(
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("Charts"),
                 .linkedFramework("Metal"),
+                .linkedFramework("CoreAudio"),
+                .linkedFramework("IOSurface"),
                 .linkedFramework("IOKit"),
                 .linkedFramework("AppKit"),
                 .linkedFramework("UserNotifications"),

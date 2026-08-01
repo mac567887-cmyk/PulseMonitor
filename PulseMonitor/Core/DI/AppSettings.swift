@@ -67,6 +67,89 @@ public final class AppSettings {
         }
     }
 
+    // MARK: - Version 2 settings
+
+    public var theme: Theme {
+        didSet {
+            guard oldValue != theme else { return }
+            defaults.set(theme.rawValue, forKey: Keys.theme)
+        }
+    }
+    public var overlayEnabled: Bool {
+        didSet {
+            guard oldValue != overlayEnabled else { return }
+            defaults.set(overlayEnabled, forKey: Keys.overlayEnabled)
+        }
+    }
+    public var overlayOpacity: Double {
+        didSet {
+            guard oldValue != overlayOpacity else { return }
+            defaults.set(overlayOpacity, forKey: Keys.overlayOpacity)
+        }
+    }
+    public var overlayAlwaysOnTop: Bool {
+        didSet {
+            guard oldValue != overlayAlwaysOnTop else { return }
+            defaults.set(overlayAlwaysOnTop, forKey: Keys.overlayOnTop)
+        }
+    }
+    public var overlayGameMode: Bool {
+        didSet {
+            guard oldValue != overlayGameMode else { return }
+            defaults.set(overlayGameMode, forKey: Keys.overlayGameMode)
+        }
+    }
+    /// Stored as a hex string so the preference survives colour-space changes.
+    public var overlayTintHex: String {
+        didSet {
+            guard oldValue != overlayTintHex else { return }
+            defaults.set(overlayTintHex, forKey: Keys.overlayTint)
+        }
+    }
+    public var overlayMetrics: Set<OverlayMetric> {
+        didSet {
+            guard oldValue != overlayMetrics else { return }
+            defaults.set(overlayMetrics.map(\.rawValue), forKey: Keys.overlayMetrics)
+        }
+    }
+    public var activeProfile: PowerProfile.Kind {
+        didSet {
+            guard oldValue != activeProfile else { return }
+            defaults.set(activeProfile.rawValue, forKey: Keys.activeProfile)
+        }
+    }
+    public var automationEnabled: Bool {
+        didSet {
+            guard oldValue != automationEnabled else { return }
+            defaults.set(automationEnabled, forKey: Keys.automation)
+        }
+    }
+    public var developerModeEnabled: Bool {
+        didSet {
+            guard oldValue != developerModeEnabled else { return }
+            defaults.set(developerModeEnabled, forKey: Keys.developerMode)
+        }
+    }
+
+    /// Metrics that may appear in the floating overlay.
+    public enum OverlayMetric: String, CaseIterable, Identifiable, Codable, Sendable {
+        case cpu, gpu, memory, temperature, battery, network, disk
+
+        public var id: String { rawValue }
+
+        public var displayName: String {
+            switch self {
+            case .cpu: "CPU"
+            case .gpu: "GPU"
+            case .memory: "RAM"
+            case .temperature: "Temp"
+            case .battery: "Battery"
+            case .network: "Network"
+            case .disk: "Disk"
+            }
+        }
+    }
+
     public enum MenuBarMetric: String, CaseIterable, Identifiable, Codable {
         case cpu, memory, temperature, network, battery
         public var id: String { rawValue }
@@ -99,6 +182,16 @@ public final class AppSettings {
         static let menuBarMetric = "menuBarMetric"
         static let appearance = "appearance"
         static let notifications = "notificationsEnabled"
+        static let theme = "theme"
+        static let overlayEnabled = "overlayEnabled"
+        static let overlayOpacity = "overlayOpacity"
+        static let overlayOnTop = "overlayAlwaysOnTop"
+        static let overlayGameMode = "overlayGameMode"
+        static let overlayTint = "overlayTintHex"
+        static let overlayMetrics = "overlayMetrics"
+        static let activeProfile = "activeProfile"
+        static let automation = "automationEnabled"
+        static let developerMode = "developerModeEnabled"
     }
 
     public init(defaults: UserDefaults = .standard) {
@@ -116,5 +209,22 @@ public final class AppSettings {
         let appearanceRaw = defaults.string(forKey: Keys.appearance) ?? AppAppearance.system.rawValue
         self.appearance = AppAppearance(rawValue: appearanceRaw) ?? .system
         self.notificationsEnabled = defaults.object(forKey: Keys.notifications) as? Bool ?? true
+
+        let themeRaw = defaults.string(forKey: Keys.theme) ?? Theme.apple.rawValue
+        self.theme = Theme(rawValue: themeRaw) ?? .apple
+        self.overlayEnabled = defaults.object(forKey: Keys.overlayEnabled) as? Bool ?? false
+        self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 0.85
+        self.overlayAlwaysOnTop = defaults.object(forKey: Keys.overlayOnTop) as? Bool ?? true
+        self.overlayGameMode = defaults.object(forKey: Keys.overlayGameMode) as? Bool ?? false
+        self.overlayTintHex = defaults.string(forKey: Keys.overlayTint) ?? "#5AA9FF"
+        if let stored = defaults.array(forKey: Keys.overlayMetrics) as? [String] {
+            self.overlayMetrics = Set(stored.compactMap(OverlayMetric.init(rawValue:)))
+        } else {
+            self.overlayMetrics = [.cpu, .memory, .temperature]
+        }
+        let profileRaw = defaults.string(forKey: Keys.activeProfile) ?? PowerProfile.Kind.balanced.rawValue
+        self.activeProfile = PowerProfile.Kind(rawValue: profileRaw) ?? .balanced
+        self.automationEnabled = defaults.object(forKey: Keys.automation) as? Bool ?? false
+        self.developerModeEnabled = defaults.object(forKey: Keys.developerMode) as? Bool ?? false
     }
 }

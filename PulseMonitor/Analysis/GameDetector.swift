@@ -19,8 +19,11 @@ public actor GameDetector {
 
     public init() {}
 
+    /// `ProcessService` already resolves `isGame` once per PID and caches it, so
+    /// this filters on that result instead of re-running the string matching for
+    /// every process on every tick.
     public func detect(in processes: [ProcessInfoModel]) async -> [ProcessInfoModel] {
-        processes.filter { Self.isLikelyGame(name: $0.name, path: $0.executablePath, bundleID: $0.bundleIdentifier) }
+        processes.filter(\.isGame)
     }
 
     public func analyzeGamePerformance(
@@ -65,17 +68,27 @@ public actor GameDetector {
         )
     }
 
+    /// Called once per new PID from `ProcessService`, never on the hot path.
+    ///
+    /// Checks are ordered cheapest-first and each candidate string is lowercased
+    /// at most once, so no intermediate concatenation is built.
     nonisolated public static func isLikelyGame(name: String, path: String?, bundleID: String?) -> Bool {
         if let path, pathHints.contains(where: { path.contains($0) }) { return true }
 
-        var haystack = name.lowercased()
+        let loweredName = name.lowercased()
+        if knownNames.contains(where: { loweredName.contains($0) }) { return true }
+
         if let bundleID {
             let lowered = bundleID.lowercased()
             if lowered.contains("game") { return true }
-            haystack += " " + lowered
+            if knownNames.contains(where: { lowered.contains($0) }) { return true }
         }
-        if let path { haystack += " " + path.lowercased() }
 
-        return knownNames.contains { haystack.contains($0) }
+        if let path {
+            let lowered = path.lowercased()
+            if knownNames.contains(where: { lowered.contains($0) }) { return true }
+        }
+
+        return false
     }
 }

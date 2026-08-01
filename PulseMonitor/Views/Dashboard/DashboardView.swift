@@ -4,14 +4,37 @@ public struct DashboardView: View {
     @Bindable var viewModel: DashboardViewModel
     @Bindable var analysisViewModel: AnalysisViewModel
 
+    /// Supplied only by the main window so the developer console can be shown
+    /// there without every torn-off dashboard duplicating the SMC polling.
+    var developerConsole: (collector: MetricsCollector, controlCenter: ControlCenterViewModel)?
+    var developerModeEnabled = false
+
+    public init(
+        viewModel: DashboardViewModel,
+        analysisViewModel: AnalysisViewModel,
+        developerConsole: (collector: MetricsCollector, controlCenter: ControlCenterViewModel)? = nil,
+        developerModeEnabled: Bool = false
+    ) {
+        self.viewModel = viewModel
+        self.analysisViewModel = analysisViewModel
+        self.developerConsole = developerConsole
+        self.developerModeEnabled = developerModeEnabled
+    }
+
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 insightBanner
                 cardGrid
+
+                if developerModeEnabled, let console = developerConsole {
+                    DeveloperConsole(collector: console.collector, controlCenter: console.controlCenter)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
             .padding(24)
+            .animation(DesignTokens.Motion.standard, value: developerModeEnabled)
         }
         .background(AmbientBackground())
     }

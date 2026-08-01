@@ -31,12 +31,22 @@ public actor ProcessService {
         var results: [ProcessInfoModel] = []
         results.reserveCapacity(pids.count)
 
-        let runningApps = Dictionary(
-            uniqueKeysWithValues: NSWorkspace.shared.runningApplications.compactMap { app -> (Int32, NSRunningApplication)? in
-                guard app.processIdentifier > 0 else { return nil }
-                return (app.processIdentifier, app)
-            }
-        )
+        // Built lazily. Reading `processIdentifier` forces AppKit to refetch each
+        // application's dynamic properties over IPC, and it is only needed for
+        // PIDs missing from the metadata cache — which on a settled system is
+        // none of them.
+        var runningApps: [Int32: NSRunningApplication]?
+        func applicationsByPID() -> [Int32: NSRunningApplication] {
+            if let runningApps { return runningApps }
+            let map = Dictionary(
+                uniqueKeysWithValues: NSWorkspace.shared.runningApplications.compactMap { app -> (Int32, NSRunningApplication)? in
+                    guard app.processIdentifier > 0 else { return nil }
+                    return (app.processIdentifier, app)
+                }
+            )
+            runningApps = map
+            return map
+        }
 
         let coreCount = Double(ProcessInfo.processInfo.activeProcessorCount)
         let arch = Self.architecture()
@@ -52,7 +62,7 @@ public actor ProcessService {
             } else {
                 guard let name = Self.processName(pid: pid) else { continue }
                 let path = Self.processPath(pid: pid)
-                let app = runningApps[pid]
+                let app = applicationsByPID()[pid]
                 let bundleID = app?.bundleIdentifier
                 meta = Metadata(
                     name: app?.localizedName ?? name,
