@@ -35,12 +35,16 @@ public actor GameDetector {
         var recommendations: [String] = []
         var detail = ExplanationGenerator.gameSpecificAdvice(for: game.name)
 
-        if metrics.cpu.totalUsage > 90 && metrics.gpu.utilization < 50 {
+        let gpuLoad = metrics.gpu.utilization
+        if metrics.cpu.totalUsage > 90, let gpuLoad, gpuLoad < 50 {
             detail += " Frame rate is likely CPU-limited."
             recommendations.append("Reduce simulation quality settings before graphics presets.")
-        } else if metrics.gpu.utilization > 90 {
+        } else if let gpuLoad, gpuLoad > 90 {
             detail += " Frame rate is likely GPU-limited."
             recommendations.append("Lower resolution, shadows, or anti-aliasing.")
+        } else if metrics.cpu.totalUsage > 90 {
+            detail += " The CPU is saturated; this GPU publishes no load counter, so the limiter cannot be confirmed."
+            recommendations.append("Compare frame rate with graphics settings lowered to test which side is limiting.")
         }
         if metrics.thermal.isThrottling {
             detail += " Thermal throttling is reducing clocks mid-session."
@@ -50,14 +54,14 @@ public actor GameDetector {
             recommendations.append("Quit background apps: \(bgCPU.prefix(3).map(\.name).joined(separator: ", ")).")
         }
 
-        // Crude FPS estimation proxy from GPU/CPU headroom — not a true frame timer.
-        let fpsEstimate = max(15, min(120, 120 - metrics.cpu.totalUsage * 0.4 - metrics.gpu.utilization * 0.3))
-        detail += String(format: " Estimated smoothness proxy ~%.0f (not a true FPS counter).", fpsEstimate)
+        // No frame rate is reported here. Deriving one from CPU and GPU load would
+        // be a guess dressed up as a measurement, and reading another process's
+        // actual frame timing needs private APIs.
 
         return BottleneckFinding(
             id: UUID(),
             category: .game,
-            severity: metrics.cpu.totalUsage > 90 || metrics.gpu.utilization > 90 ? .warning : .info,
+            severity: metrics.cpu.totalUsage > 90 || (gpuLoad ?? 0) > 90 ? .warning : .info,
             title: "Game Analysis: \(game.name)",
             summary: String(format: "%@ is active (CPU %.0f%%).", game.name, game.cpuPercent),
             detail: detail,

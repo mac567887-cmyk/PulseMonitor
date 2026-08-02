@@ -13,13 +13,20 @@ public final class ProcessViewModel {
     public var showTree = false
 
     public enum SortColumn: String, CaseIterable, Identifiable {
-        case cpu, memory, threads, pid, name, energy
+        case cpu, memory, threads, pid, name
         public var id: String { rawValue }
     }
+
+    /// How many of the machine's processes this app is allowed to inspect.
+    public private(set) var coverage = ProcessService.Coverage(visible: 0, total: 0)
 
     public init(collector: MetricsCollector, processService: ProcessService) {
         self.collector = collector
         self.processService = processService
+    }
+
+    public func refreshCoverage() async {
+        coverage = await processService.coverage
     }
 
     public var processes: [ProcessInfoModel] {
@@ -40,7 +47,6 @@ public final class ProcessViewModel {
             case .threads: result = lhs.threadCount < rhs.threadCount
             case .pid: result = lhs.pid < rhs.pid
             case .name: result = lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-            case .energy: result = (lhs.energyImpact ?? 0) < (rhs.energyImpact ?? 0)
             }
             return sortAscending ? result : !result
         }

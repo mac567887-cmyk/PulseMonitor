@@ -21,6 +21,13 @@ public enum Formatters {
         String(format: "%.\(digits)f%%", value)
     }
 
+    /// Renders an em dash for readings the hardware does not publish, so an
+    /// unavailable counter is never mistaken for a measured zero.
+    public static func percent(_ value: Double?, digits: Int = 0) -> String {
+        guard let value else { return "—" }
+        return percent(value, digits: digits)
+    }
+
     public static func celsius(_ value: Double?) -> String {
         guard let value else { return "—" }
         return String(format: "%.0f°C", value)

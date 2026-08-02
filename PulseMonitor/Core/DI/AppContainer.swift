@@ -32,6 +32,9 @@ public final class AppContainer {
     public let automationEngine: AutomationEngine
     public let insightEngine: InsightEngine
     public let autoOptimizer: AutoOptimizer
+    public let pluginHost: PluginHost
+    public let widgetBoardStore: WidgetBoardStore
+    public let liveWallpaperService: LiveWallpaperService
 
     public let dashboardViewModel: DashboardViewModel
     public let cpuViewModel: CPUViewModel
@@ -114,7 +117,6 @@ public final class AppContainer {
         self.processViewModel = ProcessViewModel(collector: collector, processService: process)
         self.historyViewModel = HistoryViewModel(historyRepository: history, settings: settings)
         self.gamesViewModel = GamesViewModel(collector: collector, gameDetector: games)
-        self.settingsViewModel = SettingsViewModel(settings: settings)
         self.analysisViewModel = AnalysisViewModel(collector: collector)
 
         // Version 2 wiring.
@@ -128,6 +130,7 @@ public final class AppContainer {
         let automation = AutomationEngine(
             settings: settings, eventLog: eventLog, profiles: profiles, alerts: alerts
         )
+        let wallpaper = LiveWallpaperService()
 
         self.capabilityService = capabilities
         self.smcService = smc
@@ -139,6 +142,12 @@ public final class AppContainer {
         self.automationEngine = automation
         self.insightEngine = InsightEngine()
         self.autoOptimizer = AutoOptimizer()
+        let plugins = PluginHost()
+        plugins.bind(collector: collector)
+        self.pluginHost = plugins
+        self.widgetBoardStore = WidgetBoardStore()
+        self.liveWallpaperService = wallpaper
+        self.settingsViewModel = SettingsViewModel(settings: settings, liveWallpaper: wallpaper)
 
         self.controlCenterViewModel = ControlCenterViewModel(
             controlService: control, capabilityService: capabilities, smcService: smc
@@ -155,6 +164,8 @@ public final class AppContainer {
 
         collector.automationEngine = automation
         collector.eventLog = eventLog
+        SharedAppContext.bind(self)
+        plugins.scan()
     }
 
     public func start() {

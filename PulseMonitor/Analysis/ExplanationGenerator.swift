@@ -8,7 +8,8 @@ public enum ExplanationGenerator {
         topCPU: [ProcessInfoModel]
     ) -> String {
         guard let primary else {
-            return "System looks balanced. No dominant bottleneck detected. CPU \(Formatters.percent(metrics.cpu.totalUsage)), memory \(Formatters.percent(metrics.memory.usagePercent)), GPU \(Formatters.percent(metrics.gpu.utilization))."
+            let gpu = metrics.gpu.utilization.map { ", GPU \(Formatters.percent($0))" } ?? ""
+            return "System looks balanced. No dominant bottleneck detected. CPU \(Formatters.percent(metrics.cpu.totalUsage)), memory \(Formatters.percent(metrics.memory.usagePercent))\(gpu)."
         }
 
         let leader = topCPU.first
@@ -16,7 +17,7 @@ public enum ExplanationGenerator {
         case .cpu:
             return cpuBottleneckDetail(cpu: metrics.cpu, leader: leader)
         case .gpu:
-            return "Your GPU is the current limiting component (\(Formatters.percent(metrics.gpu.utilization)) busy) while the CPU still has headroom (\(Formatters.percent(metrics.cpu.totalUsage))). This usually indicates rendering saturation, Metal inefficiency, or WindowServer composition pressure."
+            return "Your GPU is the current limiting component (\(Formatters.percent(metrics.gpu.utilization)) busy) while the CPU still has headroom (\(Formatters.percent(metrics.cpu.totalUsage, digits: 0))). This usually indicates rendering saturation, Metal inefficiency, or WindowServer composition pressure."
         case .memory:
             return "Memory pressure is limiting responsiveness. Used \(Formatters.percent(metrics.memory.usagePercent)), compressed \(Formatters.bytes(metrics.memory.compressedBytes)), swap \(Formatters.bytes(metrics.memory.swapUsedBytes))."
         case .thermal:

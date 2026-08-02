@@ -34,14 +34,10 @@ public struct ProcessExplorerView: View {
                     Text("\(proc.threadCount)").monospacedDigit()
                 }
                 .width(70)
-                TableColumn("Energy") { (proc: ProcessInfoModel) in
-                    Text(String(format: "%.1f", proc.energyImpact ?? 0)).monospacedDigit()
-                }
-                .width(70)
                 TableColumn("Arch") { (proc: ProcessInfoModel) in
                     Text(proc.architecture)
                 }
-                .width(60)
+                .width(110)
                 TableColumn("Developer") { (proc: ProcessInfoModel) in
                     Text(proc.developer ?? "—")
                 }
@@ -87,9 +83,28 @@ public struct ProcessExplorerView: View {
             .frame(width: 140)
             Toggle("Ascending", isOn: $viewModel.sortAscending).toggleStyle(.checkbox)
             Spacer()
-            Text("\(viewModel.processes.count) processes")
-                .foregroundStyle(.secondary)
+            coverageLabel
         }
         .padding(12)
+        .task(id: viewModel.processes.count) { await viewModel.refreshCoverage() }
+    }
+
+    /// States plainly how much of the process table is visible. `proc_pidinfo`
+    /// only answers for processes owned by this user, so a list that silently
+    /// omitted the rest would misrepresent what is running.
+    private var coverageLabel: some View {
+        let coverage = viewModel.coverage
+        return HStack(spacing: 6) {
+            Text("\(viewModel.processes.count) processes")
+            if !coverage.isComplete, coverage.total > 0 {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .help(
+                        "\(coverage.total - coverage.visible) of \(coverage.total) processes belong to other users. "
+                        + "macOS does not allow reading their CPU or memory without running as root, so they are not listed."
+                    )
+            }
+        }
+        .foregroundStyle(.secondary)
     }
 }

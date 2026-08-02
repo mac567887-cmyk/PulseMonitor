@@ -130,7 +130,9 @@ public struct TimelineView: View {
                         spacing: 8
                     ) {
                         readout("CPU", String(format: "%.0f%%", sample.cpu), .blue)
-                        readout("GPU", String(format: "%.0f%%", sample.gpu), .purple)
+                        if let gpu = sample.gpu {
+                            readout("GPU", String(format: "%.0f%%", gpu), .purple)
+                        }
                         readout("Memory", String(format: "%.0f%%", sample.memory), .green)
                         if let temperature = sample.temperature {
                             readout("Temp", String(format: "%.0f°C", temperature), .orange)
@@ -229,12 +231,14 @@ public struct TimelineView: View {
                 .foregroundStyle(.blue)
                 .interpolationMethod(.monotone)
 
-                LineMark(
-                    x: .value("Time", point.timestamp),
-                    y: .value("GPU", point.gpu)
-                )
-                .foregroundStyle(.purple)
-                .interpolationMethod(.monotone)
+                if let gpu = point.gpu {
+                    LineMark(
+                        x: .value("Time", point.timestamp),
+                        y: .value("GPU", gpu)
+                    )
+                    .foregroundStyle(.purple)
+                    .interpolationMethod(.monotone)
+                }
             }
             playhead
         }

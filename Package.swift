@@ -32,6 +32,7 @@ let package = Package(
                 .linkedFramework("IOKit"),
                 .linkedFramework("AppKit"),
                 .linkedFramework("UserNotifications"),
+                .linkedFramework("AppIntents"),
                 .linkedLibrary("sqlite3"),
                 .linkedLibrary("proc")
             ]

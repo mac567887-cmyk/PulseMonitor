@@ -5,5 +5,10 @@ import Observation
 @Observable
 public final class SettingsViewModel {
     public var settings: AppSettings
-    public init(settings: AppSettings) { self.settings = settings }
+    public var liveWallpaper: LiveWallpaperService
+
+    public init(settings: AppSettings, liveWallpaper: LiveWallpaperService) {
+        self.settings = settings
+        self.liveWallpaper = liveWallpaper
+    }
 }

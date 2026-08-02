@@ -103,10 +103,6 @@ public actor CapabilityService {
     }
 
     private static func sysctlString(_ key: String) -> String {
-        var size = 0
-        guard sysctlbyname(key, nil, &size, nil, 0) == 0, size > 0 else { return "" }
-        var buffer = [CChar](repeating: 0, count: size)
-        guard sysctlbyname(key, &buffer, &size, nil, 0) == 0 else { return "" }
-        return String(cString: buffer)
+        Sysctl.string(key) ?? ""
     }
 }

@@ -312,7 +312,8 @@ public final class OverlayViewModel {
         case .cpu:
             return String(format: "%.0f%%", metrics.cpu.totalUsage)
         case .gpu:
-            return String(format: "%.0f%%", metrics.gpu.utilization)
+            guard let gpu = metrics.gpu.utilization else { return "n/a" }
+            return String(format: "%.0f%%", gpu)
         case .memory:
             return String(format: "%.0f%%", metrics.memory.usagePercent)
         case .temperature:
@@ -336,7 +337,7 @@ public final class OverlayViewModel {
         guard let metrics else { return nil }
         switch metric {
         case .cpu: return metrics.cpu.totalUsage / 100
-        case .gpu: return metrics.gpu.utilization / 100
+        case .gpu: return metrics.gpu.utilization.map { $0 / 100 }
         case .memory: return metrics.memory.usagePercent / 100
         case .temperature:
             guard let temperature = metrics.thermal.cpuTemperatureC else { return nil }

@@ -244,7 +244,8 @@ public struct DashboardView: View {
     private func batterySubtitle(_ m: SystemMetrics?) -> String {
         guard let b = m?.battery, b.isPresent else { return "Desktop / no battery" }
         if b.isCharging { return "Charging · \(Formatters.watts(b.wattage))" }
-        return "\(b.powerSource.rawValue) · Health \(Formatters.percent(b.healthPercent ?? 0))"
+        guard let health = b.healthPercent else { return b.powerSource.rawValue }
+        return "\(b.powerSource.rawValue) · Health \(Formatters.percent(health))"
     }
 }
 

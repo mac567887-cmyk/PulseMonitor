@@ -51,10 +51,14 @@ public struct MenuBarView: View {
         }
         Divider()
         Button("Open PulseMonitor") {
-            NSApp.activate(ignoringOtherApps: true)
-            for window in NSApp.windows where window.canBecomeKey {
-                window.makeKeyAndOrderFront(nil)
-                break
+            if let delegate = NSApp.delegate as? AppDelegate {
+                delegate.ensureVisibleWindow()
+            } else {
+                NSApp.activate(ignoringOtherApps: true)
+                for window in NSApp.windows where window.canBecomeMain {
+                    window.makeKeyAndOrderFront(nil)
+                    break
+                }
             }
         }
         Button("Quit PulseMonitor") {

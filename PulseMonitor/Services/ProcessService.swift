@@ -19,7 +19,22 @@ public actor ProcessService {
         let bundleIdentifier: String?
         let developer: String?
         let isGame: Bool
+        let architecture: String
+        let codeSignature: String
     }
+
+    /// How much of the process table this app can actually see.
+    ///
+    /// `proc_listallpids` returns every PID, but `proc_pidinfo` only answers for
+    /// processes owned by the calling user. On a typical Mac that is well under
+    /// half of them, so the shortfall is surfaced rather than quietly hidden.
+    public struct Coverage: Sendable, Equatable {
+        public let visible: Int
+        public let total: Int
+        public var isComplete: Bool { visible >= total }
+    }
+
+    public private(set) var coverage = Coverage(visible: 0, total: 0)
 
     public init() {}
 
@@ -49,7 +64,6 @@ public actor ProcessService {
         }
 
         let coreCount = Double(ProcessInfo.processInfo.activeProcessorCount)
-        let arch = Self.architecture()
         var liveMetadata: [Int32: Metadata] = [:]
         liveMetadata.reserveCapacity(pids.count)
 
@@ -70,7 +84,9 @@ public actor ProcessService {
                     ppid: Self.parentPID(pid: pid),
                     bundleIdentifier: bundleID,
                     developer: bundleID?.split(separator: ".").prefix(2).joined(separator: ".").description,
-                    isGame: GameDetector.isLikelyGame(name: name, path: path, bundleID: bundleID)
+                    isGame: GameDetector.isLikelyGame(name: name, path: path, bundleID: bundleID),
+                    architecture: Self.architecture(pid: pid),
+                    codeSignature: Self.codeSignature(pid: pid) ?? "—"
                 )
             }
             liveMetadata[pid] = meta
@@ -95,10 +111,13 @@ public actor ProcessService {
                     cpuPercent: cpuPercent,
                     memoryBytes: UInt64(task.pti_resident_size),
                     threadCount: Int(task.pti_threadnum),
-                    architecture: arch,
+                    architecture: meta.architecture,
                     developer: meta.developer,
-                    codeSignatureStatus: meta.path == nil ? "Unknown" : "Present",
-                    energyImpact: cpuPercent * 1.2,
+                    codeSignatureStatus: meta.codeSignature,
+                    // No energy impact. Activity Monitor's figure blends CPU, GPU,
+                    // wakeups and disk through a private coalition API; scaling CPU
+                    // by a constant would only look like that number.
+                    energyImpact: nil,
                     diskBytesPerSec: nil,
                     networkBytesPerSec: nil,
                     gpuPercent: nil,
@@ -112,6 +131,7 @@ public actor ProcessService {
         metadataCache = liveMetadata
         previousCPUTime = nextCPU
         previousSampleDate = now
+        coverage = Coverage(visible: results.count, total: pids.count)
         return results.sorted { $0.cpuPercent > $1.cpuPercent }
     }
 
@@ -144,7 +164,7 @@ public actor ProcessService {
             Libproc.name(pid, ptr.baseAddress, UInt32(ptr.count))
         }
         guard result > 0 else { return nil }
-        return String(cString: name)
+        return String(nullTerminated: name)
     }
 
     private static func processPath(pid: Int32) -> String? {
@@ -153,7 +173,7 @@ public actor ProcessService {
             Libproc.pidPath(pid, ptr.baseAddress, UInt32(ptr.count))
         }
         guard result > 0 else { return nil }
-        return String(cString: path)
+        return String(nullTerminated: path)
     }
 
     /// Single task-info read per process; CPU time, resident size, and thread count
@@ -178,11 +198,46 @@ public actor ProcessService {
         return Int32(info.pbsi_ppid)
     }
 
-    private static func architecture() -> String {
+    /// Per-process architecture from the kernel's own process record.
+    ///
+    /// The host architecture is not the answer: on Apple Silicon an Intel binary
+    /// runs translated under Rosetta, and a 32-bit helper is neither. `P_LP64` and
+    /// `P_TRANSLATED` in `kinfo_proc` describe the process that is actually
+    /// running rather than the machine it runs on.
+    private static func architecture(pid: Int32) -> String {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        let result = sysctl(&mib, UInt32(mib.count), &info, &size, nil, 0)
+        guard result == 0, size > 0 else { return "—" }
+
+        let flags = info.kp_proc.p_flag
+        let isTranslated = (flags & Int32(PM_P_TRANSLATED)) != 0
+        let is64Bit = (flags & P_LP64) != 0
+
+        if isTranslated { return "Intel (Rosetta)" }
         #if arch(arm64)
-        "arm64"
+        return is64Bit ? "arm64" : "arm"
         #else
-        "x86_64"
+        return is64Bit ? "x86_64" : "i386"
         #endif
+    }
+
+    /// Code signing status straight from the kernel via `csops`.
+    ///
+    /// Reports what the kernel enforces, not whether a file happens to exist on
+    /// disk. Returns nil for processes belonging to another user, where the call
+    /// is not permitted.
+    private static func codeSignature(pid: Int32) -> String? {
+        var status: UInt32 = 0
+        let result = withUnsafeMutablePointer(to: &status) { pointer in
+            csops(pid, UInt32(PM_CS_OPS_STATUS), pointer, MemoryLayout<UInt32>.size)
+        }
+        guard result == 0 else { return nil }
+
+        if status & UInt32(PM_CS_PLATFORM_BINARY) != 0 { return "Apple" }
+        if status & UInt32(PM_CS_VALID) == 0 { return "Invalid" }
+        if status & UInt32(PM_CS_HARD) != 0 { return "Hardened" }
+        return "Valid"
     }
 }

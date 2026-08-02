@@ -116,6 +116,40 @@ public struct SettingsView: View {
                 .disabled(!viewModel.settings.showMenuBarExtra)
             }
 
+            Section("Live Backdrop") {
+                Toggle("Animate in-app backdrop", isOn: $viewModel.liveWallpaper.liveBackdropEnabled)
+                Text("Advances the accent wash every few seconds. Off by default so the monitor itself stays cheap to leave open.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Desktop Wallpaper Slideshow") {
+                LabeledContent("Folder") {
+                    Text(viewModel.liveWallpaper.folderURL?.lastPathComponent ?? "None")
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Images", value: "\(viewModel.liveWallpaper.imageURLs.count)")
+                Slider(value: $viewModel.liveWallpaper.intervalSeconds, in: 30...600, step: 15) {
+                    Text("Interval")
+                }
+                LabeledContent(
+                    "Interval",
+                    value: "\(Int(viewModel.liveWallpaper.intervalSeconds))s"
+                )
+                HStack {
+                    Button("Choose Folder…") { viewModel.liveWallpaper.chooseFolder() }
+                    Button("Apply Current") { viewModel.liveWallpaper.applyCurrent() }
+                    if viewModel.liveWallpaper.isRotating {
+                        Button("Stop Rotation") { viewModel.liveWallpaper.stopRotation() }
+                    } else {
+                        Button("Start Rotation") { viewModel.liveWallpaper.startRotation() }
+                    }
+                }
+                if let status = viewModel.liveWallpaper.statusMessage {
+                    Text(status).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
             Section("Motion") {
                 Text("PulseMonitor honours the system Reduce Motion setting. When it is on, ambient gradients and shimmer animations stop and value changes update without easing.")
                     .font(.caption)

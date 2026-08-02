@@ -175,19 +175,15 @@ public actor CPUService: MetricProviding {
     }
 
     private static func readBrand() -> String {
-        var size = 0
-        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
-        var buffer = [CChar](repeating: 0, count: max(size, 1))
-        sysctlbyname("machdep.cpu.brand_string", &buffer, &size, nil, 0)
-        let brand = String(cString: buffer)
-        if brand.isEmpty {
-            #if arch(arm64)
-            return "Apple Silicon"
-            #else
-            return "Intel CPU"
-            #endif
-        }
-        return brand
+        if let brand = Sysctl.string("machdep.cpu.brand_string") { return brand }
+        // Apple Silicon does not expose machdep.cpu.brand_string; hw.model is the
+        // closest public equivalent.
+        if let model = Sysctl.string("hw.model") { return model }
+        #if arch(arm64)
+        return "Apple Silicon"
+        #else
+        return "Intel CPU"
+        #endif
     }
 
     private static func detectArchitecture() -> CPUMetrics.CPUArchitecture {
@@ -218,25 +214,27 @@ public actor CPUService: MetricProviding {
         return readFrequencyMHz()
     }
 
+    /// Live task and thread totals from the default processor set — the same
+    /// source `top` reports. Unlike counting `proc_listallpids` this needs no
+    /// per-process syscall, so it is cheap enough to run every tick.
     private static func readProcessThreadCounts() -> (processes: Int, threads: Int) {
-        var numCPUs: natural_t = 0
-        var infoCount = mach_msg_type_number_t(MemoryLayout<host_basic_info_data_t>.stride / MemoryLayout<integer_t>.stride)
-        var basic = host_basic_info()
-        _ = withUnsafeMutablePointer(to: &basic) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(infoCount)) {
-                host_info(mach_host_self(), HOST_BASIC_INFO, $0, &infoCount)
+        var pset = processor_set_name_t()
+        guard processor_set_default(mach_host_self(), &pset) == KERN_SUCCESS else {
+            return (0, 0)
+        }
+        defer { mach_port_deallocate(mach_task_self_, pset) }
+
+        var info = processor_set_load_info()
+        var count = mach_msg_type_number_t(
+            MemoryLayout<processor_set_load_info>.stride / MemoryLayout<natural_t>.stride
+        )
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                processor_set_statistics(pset, PROCESSOR_SET_LOAD_INFO, $0, &count)
             }
         }
-        _ = numCPUs
-
-        // Use sysctl for process count approximation via kern.argmax path alternatives:
-        var nproc: Int32 = 0
-        var size = MemoryLayout<Int32>.size
-        sysctlbyname("kern.nmaxproc", &nproc, &size, nil, 0)
-
-        // Fall back to ProcessInfo active processor count-based placeholder for threads;
-        // ProcessService provides authoritative per-process thread totals.
-        return (processes: Int(nproc), threads: 0)
+        guard result == KERN_SUCCESS else { return (0, 0) }
+        return (processes: Int(info.task_count), threads: Int(info.thread_count))
     }
 
     private static func readVMStats() -> (contextSwitches: UInt64, interrupts: UInt64) {

@@ -24,10 +24,14 @@ public struct PerformanceOverlayContent: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 52, alignment: .leading)
 
+                    // Values snap rather than roll. A morphing numeric transition
+                    // re-renders the glyphs every frame it runs, which measured at
+                    // several percent of a core for a panel this small — an
+                    // unacceptable price for something whose whole purpose is to be
+                    // watched during games. Monospaced digits keep it steady instead.
                     Text(viewModel.value(for: metric))
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .contentTransition(.numericText())
                         .foregroundStyle(tint(for: metric))
                         .frame(minWidth: 58, alignment: .trailing)
                 }
@@ -42,15 +46,19 @@ public struct PerformanceOverlayContent: View {
         .padding(.horizontal, 11)
         .padding(.vertical, 9)
         .background {
+            // Solid rather than a material on purpose. The panel floats above
+            // whatever the user is doing, so a translucent material would have to
+            // re-blur that content — a game or a video — every frame it changes,
+            // which is exactly the workload this overlay exists to watch. A flat
+            // scrim costs nothing and stays legible over bright scenes.
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(Color.black.opacity(0.62))
                 .overlay {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.8)
                 }
         }
         .opacity(settings.overlayOpacity)
-        .animation(DesignTokens.Motion.value, value: viewModel.metrics?.timestamp)
         .fixedSize()
     }
 

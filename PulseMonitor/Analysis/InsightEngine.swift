@@ -211,7 +211,10 @@ public struct InsightEngine: Sendable {
         }
 
         // Idle load is a distinct and more actionable finding than general load.
-        let idlePeriods = samples.filter { $0.cpu.totalUsage > 15 && $0.gpu.utilization < 5 }
+        let idlePeriods = samples.filter { sample in
+            guard let gpu = sample.gpu.utilization else { return false }
+            return sample.cpu.totalUsage > 15 && gpu < 5
+        }
         if Double(idlePeriods.count) / Double(samples.count) > 0.6, mean < 40, let culprit = processes.first {
             results.append(.init(
                 kind: .behaviour,

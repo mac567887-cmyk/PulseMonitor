@@ -31,11 +31,13 @@ public struct HistoryView: View {
                     y: .value("Memory", point.memory)
                 )
                 .foregroundStyle(by: .value("Metric", "Memory"))
-                LineMark(
-                    x: .value("Time", point.timestamp),
-                    y: .value("GPU", point.gpu)
-                )
-                .foregroundStyle(by: .value("Metric", "GPU"))
+                if let gpu = point.gpu {
+                    LineMark(
+                        x: .value("Time", point.timestamp),
+                        y: .value("GPU", gpu)
+                    )
+                    .foregroundStyle(by: .value("Metric", "GPU"))
+                }
             }
             .chartYScale(domain: 0...100)
             .padding(24)

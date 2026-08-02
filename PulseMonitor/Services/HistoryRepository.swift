@@ -4,7 +4,7 @@ import SQLite3
 /// SQLite-backed historical metrics store with configurable retention.
 public actor HistoryRepository {
     private var db: OpaquePointer?
-    nonisolated(unsafe) private let settings: AppSettings
+    nonisolated private let settings: AppSettings
     private let fileURL: URL
 
     public init(settings: AppSettings, fileURL: URL? = nil) {
@@ -57,7 +57,11 @@ public actor HistoryRepository {
 
         sqlite3_bind_double(statement, 1, metrics.timestamp.timeIntervalSince1970)
         sqlite3_bind_double(statement, 2, metrics.cpu.totalUsage)
-        sqlite3_bind_double(statement, 3, metrics.gpu.utilization)
+        if let gpu = metrics.gpu.utilization {
+            sqlite3_bind_double(statement, 3, gpu)
+        } else {
+            sqlite3_bind_null(statement, 3)
+        }
         sqlite3_bind_double(statement, 4, metrics.memory.usagePercent)
         sqlite3_bind_double(statement, 5, Double(metrics.memory.swapUsedBytes))
         sqlite3_bind_double(statement, 6, metrics.network.bytesInPerSec)
@@ -69,7 +73,7 @@ public actor HistoryRepository {
         }
         sqlite3_bind_text(statement, 9, metrics.thermal.thermalState.rawValue, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
         if let payload {
-            payload.withUnsafeBytes { raw in
+            _ = payload.withUnsafeBytes { raw in
                 sqlite3_bind_blob(statement, 10, raw.baseAddress, Int32(payload.count), unsafeBitCast(-1, to: sqlite3_destructor_type.self))
             }
         } else {
@@ -83,7 +87,8 @@ public actor HistoryRepository {
         public var id: Double { timestamp.timeIntervalSince1970 }
         public let timestamp: Date
         public let cpu: Double
-        public let gpu: Double
+        /// Null for rows recorded on a GPU whose driver publishes no load counter.
+        public let gpu: Double?
         public let memory: Double
         public let networkIn: Double
         public let networkOut: Double
@@ -106,11 +111,12 @@ public actor HistoryRepository {
         while sqlite3_step(statement) == SQLITE_ROW {
             let ts = Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
             let temp: Double? = sqlite3_column_type(statement, 6) == SQLITE_NULL ? nil : sqlite3_column_double(statement, 6)
+            let gpu: Double? = sqlite3_column_type(statement, 2) == SQLITE_NULL ? nil : sqlite3_column_double(statement, 2)
             points.append(
                 HistoryPoint(
                     timestamp: ts,
                     cpu: sqlite3_column_double(statement, 1),
-                    gpu: sqlite3_column_double(statement, 2),
+                    gpu: gpu,
                     memory: sqlite3_column_double(statement, 3),
                     networkIn: sqlite3_column_double(statement, 4),
                     networkOut: sqlite3_column_double(statement, 5),

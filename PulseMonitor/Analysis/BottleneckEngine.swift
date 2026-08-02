@@ -41,7 +41,10 @@ public actor BottleneckEngine: AnalysisEngine {
         let cpu = metrics.cpu
         let gpu = metrics.gpu
 
-        if cpu.totalUsage > 95 && gpu.utilization < 40 {
+        // The comparative claim needs a real GPU reading. Where the driver
+        // publishes no counter, an unknown GPU is not evidence of an idle one, so
+        // the rule falls through to the plain high-load finding below.
+        if cpu.totalUsage > 95, let gpuLoad = gpu.utilization, gpuLoad < 40 {
             let leader = top.first
             let detail = ExplanationGenerator.cpuBottleneckDetail(cpu: cpu, leader: leader)
             findings.append(
@@ -126,7 +129,7 @@ public actor BottleneckEngine: AnalysisEngine {
 
     private func diagnoseGPU(metrics: SystemMetrics, processes: [ProcessInfoModel]) -> [BottleneckFinding] {
         var findings: [BottleneckFinding] = []
-        if metrics.gpu.utilization > 95 && metrics.cpu.totalUsage < 60 {
+        if let gpuLoad = metrics.gpu.utilization, gpuLoad > 95, metrics.cpu.totalUsage < 60 {
             findings.append(
                 BottleneckFinding(
                     id: UUID(),
@@ -146,22 +149,9 @@ public actor BottleneckEngine: AnalysisEngine {
                 )
             )
         }
-        if let ws = metrics.gpu.windowServerCPU, ws > 40 {
-            findings.append(
-                BottleneckFinding(
-                    id: UUID(),
-                    category: .gpu,
-                    severity: .warning,
-                    title: "WindowServer Pressure",
-                    summary: String(format: "WindowServer is using %.0f%% CPU.", ws),
-                    detail: "Elevated WindowServer usage often indicates display composition pressure, translucent UI, or misbehaving apps forcing expensive redraws.",
-                    relatedProcesses: ["WindowServer"],
-                    recommendations: ["Reduce transparency, close full-screen video surfaces, check multi-monitor arrangement."],
-                    detectedAt: .now,
-                    confidence: 0.7
-                )
-            )
-        }
+        // A WindowServer rule used to live here. It could never fire: WindowServer
+        // runs as another user, and task info for such a process is unreadable
+        // without root, so its CPU share never reached this engine.
         return findings
     }
 

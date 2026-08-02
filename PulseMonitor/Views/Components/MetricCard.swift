@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 /// Live dashboard card with value, trend, mini-graph, status, and prediction.
 public struct MetricCard: View {
@@ -106,30 +105,95 @@ public struct StatusPill: View {
     }
 }
 
+/// Compact trend line for dashboard cards.
+///
+/// Deliberately drawn with `Canvas` rather than `Chart`. The dashboard shows
+/// fifteen of these at once and each tick invalidates all of them; profiling the
+/// running app showed Swift Charts rebuilding its scales and plot layout for
+/// every card, which accounted for roughly half of all main-thread time. The
+/// module views keep Swift Charts, where axes, selection and tooltips earn it.
 public struct MiniSparkline: View {
     public let values: [Double]
     public let accent: Color
 
-    public var body: some View {
-        Chart {
-            ForEach(Array(values.enumerated()), id: \.offset) { index, value in
-                LineMark(
-                    x: .value("t", index),
-                    y: .value("v", value)
-                )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(accent)
+    public init(values: [Double], accent: Color) {
+        self.values = values
+        self.accent = accent
+    }
 
-                AreaMark(
-                    x: .value("t", index),
-                    y: .value("v", value)
+    public var body: some View {
+        Canvas(rendersAsynchronously: false) { context, size in
+            guard values.count > 1 else { return }
+            let points = Self.layout(values: values, in: size)
+            let line = Self.smoothPath(through: points)
+
+            var fill = line
+            fill.addLine(to: CGPoint(x: points[points.count - 1].x, y: size.height))
+            fill.addLine(to: CGPoint(x: points[0].x, y: size.height))
+            fill.closeSubpath()
+
+            context.fill(
+                fill,
+                with: .linearGradient(
+                    Gradient(colors: [accent.opacity(0.28), accent.opacity(0.02)]),
+                    startPoint: .zero,
+                    endPoint: CGPoint(x: 0, y: size.height)
                 )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(accent.opacity(0.15))
-            }
+            )
+            context.stroke(
+                line,
+                with: .color(accent),
+                style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+            )
         }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartLegend(.hidden)
+        .accessibilityHidden(true)
+    }
+
+    /// Maps samples into the canvas, scaling to the window's own range so small
+    /// fluctuations stay visible. A flat series is drawn through the middle.
+    private static func layout(values: [Double], in size: CGSize) -> [CGPoint] {
+        let lowest = values.min() ?? 0
+        let highest = values.max() ?? 0
+        let span = highest - lowest
+        let inset: CGFloat = 1.5
+        let usableHeight = max(size.height - inset * 2, 1)
+        let stride = size.width / CGFloat(values.count - 1)
+
+        return values.enumerated().map { index, value in
+            let normalized = span > 0 ? (value - lowest) / span : 0.5
+            return CGPoint(
+                x: CGFloat(index) * stride,
+                y: inset + usableHeight * (1 - normalized)
+            )
+        }
+    }
+
+    /// Centripetal-style Catmull-Rom spline expressed as cubic Béziers, matching
+    /// the curve shape Swift Charts produced before.
+    private static func smoothPath(through points: [CGPoint]) -> Path {
+        var path = Path()
+        path.move(to: points[0])
+        guard points.count > 2 else {
+            path.addLine(to: points[1])
+            return path
+        }
+
+        for index in 0..<(points.count - 1) {
+            let p0 = points[max(index - 1, 0)]
+            let p1 = points[index]
+            let p2 = points[index + 1]
+            let p3 = points[min(index + 2, points.count - 1)]
+
+            let control1 = CGPoint(
+                x: p1.x + (p2.x - p0.x) / 6,
+                y: p1.y + (p2.y - p0.y) / 6
+            )
+            let control2 = CGPoint(
+                x: p2.x - (p3.x - p1.x) / 6,
+                y: p2.y - (p3.y - p1.y) / 6
+            )
+            path.addCurve(to: p2, control1: control1, control2: control2)
+        }
+        return path
     }
 }

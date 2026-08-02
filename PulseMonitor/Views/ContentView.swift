@@ -4,8 +4,8 @@ import SwiftUI
 public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
     case dashboard, insights, analysis
     case cpu, gpu, memory, thermal, storage, network, battery
-    case processes, applications
-    case controlCenter, fans, profiles, optimizer
+    case processes, applications, widgets
+    case controlCenter, fans, profiles, optimizer, plugins
     case benchmarks, systemMap, timeline, history, logs
     case games, reports, settings
 
@@ -25,10 +25,12 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .battery: "Battery"
         case .processes: "Processes"
         case .applications: "Applications"
+        case .widgets: "Widgets"
         case .controlCenter: "Control Center"
         case .fans: "Fans & Sensors"
         case .profiles: "Profiles"
         case .optimizer: "Optimizer"
+        case .plugins: "Plugins"
         case .benchmarks: "Benchmarks"
         case .systemMap: "System Map"
         case .timeline: "Timeline"
@@ -54,10 +56,12 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .battery: "battery.100"
         case .processes: "list.bullet.rectangle"
         case .applications: "square.grid.2x2"
+        case .widgets: "rectangle.3.group"
         case .controlCenter: "switch.2"
         case .fans: "fan.fill"
         case .profiles: "slider.horizontal.3"
         case .optimizer: "wand.and.stars"
+        case .plugins: "puzzlepiece.extension"
         case .benchmarks: "speedometer"
         case .systemMap: "point.3.connected.trianglepath.dotted"
         case .timeline: "clock.arrow.circlepath"
@@ -81,10 +85,10 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
 
         public var items: [SidebarItem] {
             switch self {
-            case .overview: [.dashboard, .insights, .analysis]
+            case .overview: [.dashboard, .insights, .analysis, .widgets]
             case .hardware: [.cpu, .gpu, .memory, .thermal, .storage, .network, .battery]
             case .activity: [.processes, .applications, .games]
-            case .control: [.controlCenter, .fans, .profiles, .optimizer]
+            case .control: [.controlCenter, .fans, .profiles, .optimizer, .plugins]
             case .tools: [.benchmarks, .systemMap, .timeline, .history, .logs, .reports, .settings]
             }
         }
@@ -269,6 +273,12 @@ public struct ModuleDetail: View {
             ProcessExplorerView(viewModel: container.processViewModel)
         case .applications:
             AppManagerView(viewModel: container.appManagerViewModel)
+        case .widgets:
+            WidgetBoardView(
+                store: container.widgetBoardStore,
+                collector: container.metricsCollector,
+                pluginHost: container.pluginHost
+            )
         case .controlCenter:
             ControlCenterView(viewModel: container.controlCenterViewModel)
         case .fans:
@@ -281,6 +291,8 @@ public struct ModuleDetail: View {
             )
         case .optimizer:
             OptimizerView(viewModel: container.optimizerViewModel)
+        case .plugins:
+            PluginsView(host: container.pluginHost)
         case .benchmarks:
             BenchmarkView(viewModel: container.benchmarkViewModel)
         case .systemMap:

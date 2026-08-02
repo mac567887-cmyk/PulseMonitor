@@ -223,19 +223,27 @@ public struct SystemMapView: View {
                 id: .gpu,
                 title: "GPU",
                 symbol: "cube",
-                value: metrics.map { String(format: "%.0f%%", $0.gpu.utilization) },
-                fraction: metrics.map { $0.gpu.utilization / 100 },
-                isAvailable: metrics != nil,
-                unavailableReason: nil,
+                value: metrics?.gpu.utilization.map { String(format: "%.0f%%", $0) },
+                fraction: metrics?.gpu.utilization.map { $0 / 100 },
+                isAvailable: metrics?.gpu.hasUtilizationCounters ?? false,
+                unavailableReason: metrics?.gpu.hasUtilizationCounters == false
+                    ? "This GPU's driver publishes no utilization counter."
+                    : nil,
                 detail: metrics.map { m in
                     var rows: [(String, String)] = [("Device", m.gpu.deviceName)]
+                    if let clock = m.gpu.frequencyMHz {
+                        rows.append(("Core clock", Formatters.mhz(clock)))
+                    }
+                    if let temperature = m.gpu.temperatureC {
+                        rows.append(("Temperature", Formatters.celsius(temperature)))
+                    }
+                    if let power = m.gpu.powerWatts {
+                        rows.append(("Power", Formatters.watts(power)))
+                    }
                     if let used = m.gpu.memoryUsedBytes {
                         rows.append(("Memory in use", Formatters.bytes(used)))
                     }
-                    if let windowServer = m.gpu.windowServerCPU {
-                        rows.append(("WindowServer CPU", String(format: "%.1f%%", windowServer)))
-                    }
-                    rows.append(("Metal active", m.gpu.isMetalActive ? "Yes" : "No"))
+                    rows.append(("Counters", m.gpu.isMetalActive ? "Published" : "Not published"))
                     return rows
                 } ?? []
             ),

@@ -1,7 +1,14 @@
 import Foundation
+import IOKit
 import IOKit.ps
 
-/// Reads battery and power-adapter state via IOKit Power Sources.
+/// Reads battery and power-adapter state via IOKit Power Sources, topped up with
+/// the `AppleSmartBattery` registry entry.
+///
+/// The Power Sources description alone cannot report health or wear: it carries
+/// neither the design capacity nor the cycle count on current macOS versions, so
+/// anything derived from it would be a guess. The battery's IOService node does
+/// publish those, and reading the registry needs no entitlement.
 public actor BatteryService: MetricProviding {
     public typealias Metric = BatteryMetrics
 
@@ -18,6 +25,7 @@ public actor BatteryService: MetricProviding {
             )
         }
 
+        let smart = Self.smartBatteryProperties()
         var battery: BatteryMetrics = .empty
         for source in list {
             guard let desc = IOPSGetPowerSourceDescription(blob, source)?.takeUnretainedValue() as? [String: Any] else {
@@ -29,15 +37,24 @@ public actor BatteryService: MetricProviding {
             let charge = desc[kIOPSCurrentCapacityKey] as? Double
             let isCharging = desc[kIOPSIsChargingKey] as? Bool ?? false
             let isCharged = desc[kIOPSIsChargedKey] as? Bool ?? false
-            let cycle = desc["Cycle Count"] as? Int
-            let design = desc[kIOPSDesignCapacityKey] as? Double
-            let maxCap = desc[kIOPSMaxCapacityKey] as? Double
-            let voltage = desc[kIOPSVoltageKey] as? Double
-            let current = desc[kIOPSCurrentKey] as? Double
             let timeToEmpty = desc[kIOPSTimeToEmptyKey] as? Int
             let timeToFull = desc[kIOPSTimeToFullChargeKey] as? Int
-            let temp = desc["Temperature"] as? Double
             let powerSourceState = desc[kIOPSPowerSourceStateKey] as? String
+
+            let cycle = smart["CycleCount"] as? Int
+            let design = (smart["DesignCapacity"] as? Double).flatMap { $0 > 0 ? $0 : nil }
+            // AppleRawMaxCapacity is the true full-charge capacity in mAh.
+            // MaxCapacity was redefined as a percentage on newer models, so it is
+            // only trusted as a fallback when it is clearly not a percentage.
+            let maxCap: Double? = {
+                if let raw = smart["AppleRawMaxCapacity"] as? Double, raw > 0 { return raw }
+                if let value = smart["MaxCapacity"] as? Double, value > 100 { return value }
+                return nil
+            }()
+            let voltage = smart["Voltage"] as? Double ?? desc[kIOPSVoltageKey] as? Double
+            let current = smart["Amperage"] as? Double ?? desc[kIOPSCurrentKey] as? Double
+            // Reported in hundredths of a degree Celsius.
+            let temp = (smart["Temperature"] as? Double).map { $0 / 100.0 }
 
             let health: Double? = {
                 guard let design, let maxCap, design > 0 else { return nil }
@@ -73,7 +90,7 @@ public actor BatteryService: MetricProviding {
                 amperagemA: current,
                 wattage: watts,
                 timeRemainingMinutes: remaining,
-                temperatureC: temp.map { $0 > 200 ? $0 / 10.0 : $0 },
+                temperatureC: temp,
                 powerSource: sourceKind
             )
         }
@@ -88,5 +105,23 @@ public actor BatteryService: MetricProviding {
             )
         }
         return battery
+    }
+
+    /// Snapshot of the battery IOService properties. Empty on desktops and on any
+    /// model that does not publish the node.
+    private static func smartBatteryProperties() -> [String: Any] {
+        let service = IOServiceGetMatchingService(
+            kIOMainPortDefault,
+            IOServiceMatching("AppleSmartBattery")
+        )
+        guard service != IO_OBJECT_NULL else { return [:] }
+        defer { IOObjectRelease(service) }
+
+        var unmanaged: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let properties = unmanaged?.takeRetainedValue() as? [String: Any] else {
+            return [:]
+        }
+        return properties
     }
 }

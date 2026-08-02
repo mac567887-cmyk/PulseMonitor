@@ -93,19 +93,33 @@ extension View {
     }
 }
 
-/// Slow-drifting accent gradient used behind the sidebar and window chrome.
+/// Accent gradient wash behind the sidebar and window chrome.
 ///
-/// The animation is intentionally long-period so it costs almost nothing per
-/// frame while still making the window feel alive.
+/// Static by default. An earlier `repeatForever` version kept the display link
+/// running and burned roughly two thirds of main-thread time. When the user
+/// explicitly enables “Live backdrop”, a `TimelineView` advances the wash every
+/// few seconds — never at display refresh — so the option stays optional and
+/// honest about its cost.
 public struct AmbientBackdrop: View {
     @Environment(\.theme) private var theme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var drift: CGFloat = 0
+    @Environment(\.liveBackdropEnabled) private var liveBackdropEnabled
 
     public init() {}
 
     public var body: some View {
+        if liveBackdropEnabled && theme != .oled {
+            // Qualified: the app also defines a Performance Timeline view named TimelineView.
+            SwiftUI.TimelineView(.periodic(from: .now, by: 4)) { context in
+                layers(phase: context.date.timeIntervalSinceReferenceDate)
+            }
+        } else {
+            layers(phase: 0)
+        }
+    }
+
+    private func layers(phase: TimeInterval) -> some View {
         GeometryReader { proxy in
+            let drift = liveBackdropEnabled ? sin(phase / 12) * 0.04 : 0
             ZStack {
                 if theme == .oled {
                     Color.black
@@ -114,14 +128,14 @@ public struct AmbientBackdrop: View {
 
                     RadialGradient(
                         colors: [theme.accent.opacity(0.22), .clear],
-                        center: UnitPoint(x: 0.15 + drift * 0.08, y: 0.05),
+                        center: UnitPoint(x: 0.15 + drift, y: 0.05),
                         startRadius: 0,
                         endRadius: proxy.size.width * 0.75
                     )
 
                     RadialGradient(
                         colors: [theme.secondaryAccent.opacity(0.18), .clear],
-                        center: UnitPoint(x: 0.9 - drift * 0.1, y: 0.85),
+                        center: UnitPoint(x: 0.9 - drift, y: 0.85),
                         startRadius: 0,
                         endRadius: proxy.size.width * 0.7
                     )
@@ -130,12 +144,17 @@ public struct AmbientBackdrop: View {
             .ignoresSafeArea()
         }
         .allowsHitTesting(false)
-        .onAppear {
-            guard !reduceMotion, theme != .oled else { return }
-            withAnimation(.easeInOut(duration: 18).repeatForever(autoreverses: true)) {
-                drift = 1
-            }
-        }
+    }
+}
+
+private struct LiveBackdropKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    public var liveBackdropEnabled: Bool {
+        get { self[LiveBackdropKey.self] }
+        set { self[LiveBackdropKey.self] = newValue }
     }
 }
 

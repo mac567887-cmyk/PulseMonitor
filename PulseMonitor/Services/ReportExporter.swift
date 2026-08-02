@@ -53,7 +53,10 @@ public actor ReportExporter {
     public func exportCSV(_ report: ReportPayload, to url: URL) throws {
         var lines = ["metric,value"]
         lines.append("cpu_percent,\(report.metrics.cpu.totalUsage)")
-        lines.append("gpu_percent,\(report.metrics.gpu.utilization)")
+        // Left empty rather than zero when the driver publishes no counter, so a
+        // spreadsheet does not average in a load that was never measured.
+        let gpuPercent = report.metrics.gpu.utilization.map { String($0) } ?? ""
+        lines.append("gpu_percent,\(gpuPercent)")
         lines.append("memory_percent,\(report.metrics.memory.usagePercent)")
         lines.append("swap_bytes,\(report.metrics.memory.swapUsedBytes)")
         lines.append("thermal_state,\(report.metrics.thermal.thermalState.rawValue)")
@@ -130,10 +133,6 @@ public actor ReportExporter {
     }
 
     private static func modelIdentifier() -> String {
-        var size = 0
-        sysctlbyname("hw.model", nil, &size, nil, 0)
-        var buffer = [CChar](repeating: 0, count: max(size, 1))
-        sysctlbyname("hw.model", &buffer, &size, nil, 0)
-        return String(cString: buffer)
+        Sysctl.string("hw.model") ?? "Unknown Mac"
     }
 }

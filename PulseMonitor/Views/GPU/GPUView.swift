@@ -9,20 +9,31 @@ public struct GPUView: View {
             VStack(alignment: .leading, spacing: 20) {
                 SectionHeader("GPU", subtitle: viewModel.metrics?.deviceName)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 12) {
-                    tile("Utilization", Formatters.percent(viewModel.metrics?.utilization ?? 0))
-                    tile("Renderer", Formatters.percent(viewModel.metrics?.rendererUtilization ?? 0))
-                    tile("Tiler", Formatters.percent(viewModel.metrics?.tilerUtilization ?? 0))
-                    tile("Metal", viewModel.metrics?.isMetalActive == true ? "Active" : "Idle")
-                    tile("Memory", Formatters.bytes(viewModel.metrics?.memoryTotalBytes ?? 0))
-                    tile("WindowServer", Formatters.percent(viewModel.metrics?.windowServerCPU ?? 0))
+                    tile("Utilization", Formatters.percent(viewModel.metrics?.utilization))
+                    tile("Renderer", Formatters.percent(viewModel.metrics?.rendererUtilization))
+                    tile("Tiler", Formatters.percent(viewModel.metrics?.tilerUtilization))
+                    tile("Core Clock", Formatters.mhz(viewModel.metrics?.frequencyMHz))
+                    tile("Temperature", Formatters.celsius(viewModel.metrics?.temperatureC))
+                    tile("Power", Formatters.watts(viewModel.metrics?.powerWatts))
+                    tile("VRAM In Use", viewModel.metrics?.memoryUsedBytes.map(Formatters.bytes) ?? "—")
+                    tile("VRAM Total", viewModel.metrics?.memoryTotalBytes.map(Formatters.bytes) ?? "—")
                 }
-                Chart {
-                    ForEach(Array(viewModel.history.enumerated()), id: \.offset) { i, v in
-                        LineMark(x: .value("t", i), y: .value("gpu", v))
+
+                if viewModel.metrics?.hasUtilizationCounters == false {
+                    CapabilityNotice(
+                        state: .unsupported(
+                            reason: "\(viewModel.metrics?.deviceName ?? "This GPU")'s driver does not publish utilization counters, and the IOReport channels Activity Monitor reads are private."
+                        )
+                    )
+                } else {
+                    Chart {
+                        ForEach(Array(viewModel.history.enumerated()), id: \.offset) { i, v in
+                            LineMark(x: .value("t", i), y: .value("gpu", v))
+                        }
                     }
+                    .frame(height: 200)
+                    .chartYScale(domain: 0...100)
                 }
-                .frame(height: 200)
-                .chartYScale(domain: 0...100)
             }
             .padding(24)
         }

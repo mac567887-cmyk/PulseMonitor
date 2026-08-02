@@ -7,6 +7,7 @@ import SwiftUI
 /// from the same collector so every window stays in step without extra polling.
 @main
 struct PulseMonitorApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var container = AppContainer()
     @State private var overlayController: OverlayWindowController?
 
@@ -15,6 +16,7 @@ struct PulseMonitorApp: App {
             ContentView(container: container)
                 .frame(minWidth: 1000, minHeight: 660)
                 .environment(\.theme, container.settings.theme)
+                .environment(\.liveBackdropEnabled, container.liveWallpaperService.liveBackdropEnabled)
                 .preferredColorScheme(container.settings.theme.colorScheme)
                 // Sampling is tied to the app, not to this window. Closing the
                 // main window leaves the menu bar item and overlay running, and
@@ -64,11 +66,14 @@ struct PulseMonitorApp: App {
 
     @CommandsBuilder
     private var commands: some Commands {
-        CommandGroup(replacing: .newItem) {}
+        // The default New Window item is kept deliberately. The app outlives its
+        // main window — the menu bar item and the overlay hold it open — so
+        // removing it would strand a user who closed that window with no way back.
 
-        CommandMenu("Window") {
-            Text("Open module in a new window")
-            Divider()
+        // Named "Modules" rather than "Window": a CommandMenu called Window does
+        // not merge with the standard one, it sits beside it, leaving two menus
+        // with the same name in the bar.
+        CommandMenu("Modules") {
             ForEach(SidebarItem.allCases) { item in
                 OpenModuleButton(item: item)
             }

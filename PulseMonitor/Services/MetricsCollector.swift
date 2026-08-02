@@ -140,10 +140,6 @@ public final class MetricsCollector {
             procs = latestProcesses
         }
 
-        if let ws = procs.first(where: { $0.name == "WindowServer" }) {
-            await gpuService.updateWindowServerCPU(ws.cpuPercent)
-        }
-
         let uptime = ProcessInfo.processInfo.systemUptime
         let power = PowerMetrics(
             packageWatts: cpuM.packagePowerWatts ?? 0,
@@ -173,7 +169,9 @@ public final class MetricsCollector {
 
         appendHistory(cpuM.totalUsage, to: &cpuHistory)
         appendHistory(memM.usagePercent, to: &memoryHistory)
-        appendHistory(gpuM.utilization, to: &gpuHistory)
+        if let gpuLoad = gpuM.utilization {
+            appendHistory(gpuLoad, to: &gpuHistory)
+        }
         appendHistory(netM.bytesInPerSec, to: &networkInHistory)
         appendHistory(netM.bytesOutPerSec, to: &networkOutHistory)
         if let temp = thermM.cpuTemperatureC ?? thermM.batteryTemperatureC {

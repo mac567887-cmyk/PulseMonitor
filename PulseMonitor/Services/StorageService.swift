@@ -71,17 +71,12 @@ public actor StorageService: MetricProviding {
         var readOps: UInt64 = 0
         var writeOps: UInt64 = 0
 
-        var port: mach_port_t = 0
-        guard IOMasterPort(kIOMainPortDefault, &port) == KERN_SUCCESS else {
-            return (0, 0, 0, 0)
-        }
-
         guard let matching = IOServiceMatching("IOBlockStorageDriver") else {
             return (0, 0, 0, 0)
         }
 
         var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(port, matching, &iterator) == KERN_SUCCESS else {
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
             return (0, 0, 0, 0)
         }
         defer { IOObjectRelease(iterator) }
