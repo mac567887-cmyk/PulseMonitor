@@ -41,6 +41,7 @@ public struct DashboardView: View {
 
     private var header: some View {
         HStack(alignment: .top) {
+            BrandMark(size: 56)
             VStack(alignment: .leading, spacing: 6) {
                 Text("PulseMonitor")
                     .font(.largeTitle.weight(.bold))

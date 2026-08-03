@@ -241,6 +241,23 @@ public struct SettingsView: View {
 
     private var privacy: some View {
         Form {
+            Section {
+                HStack(spacing: 14) {
+                    BrandMark(size: 64)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("PulseMonitor")
+                            .font(.title2.weight(.semibold))
+                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0")")
+                            .foregroundStyle(.secondary)
+                        Text("Local-only hardware control centre")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+
             Section("Data Handling") {
                 LabeledContent("Telemetry", value: "None")
                 LabeledContent("Analytics", value: "None")

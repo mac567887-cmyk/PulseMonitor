@@ -1,5 +1,7 @@
 # PulseMonitor
 
+![PulseMonitor](docs/app-icon.png)
+
 A macOS hardware monitoring and control centre built to explain **why** a Mac is slow, not just show percentages.
 
 ![Platform](https://img.shields.io/badge/macOS-14%2B%20Sonoma-blue)

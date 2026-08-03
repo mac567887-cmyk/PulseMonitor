@@ -145,9 +145,8 @@ public struct ContentView: View {
     /// Persistent profile indicator so the active monitoring behaviour is never
     /// a mystery.
     private var profileFooter: some View {
-        HStack(spacing: 7) {
-            Image(systemName: container.settings.activeProfile.symbol)
-                .foregroundStyle(container.settings.theme.accent)
+        HStack(spacing: 8) {
+            BrandMark(size: 28)
             VStack(alignment: .leading, spacing: 0) {
                 Text(container.settings.activeProfile.displayName)
                     .font(.caption.weight(.medium))

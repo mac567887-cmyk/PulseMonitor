@@ -26,9 +26,17 @@ public struct MenuBarLabel: View {
                 return "AC"
             }
         }()
-        Text(text)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .monospacedDigit()
+        // Menu bar extras prefer a compact coloured mark plus the live metric.
+        Label {
+            Text(text)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+        } icon: {
+            Image(nsImage: BrandArtwork.logo)
+                .resizable()
+                .frame(width: 14, height: 14)
+        }
+        .labelStyle(.titleAndIcon)
     }
 }
 
@@ -37,8 +45,14 @@ public struct MenuBarView: View {
 
     public var body: some View {
         let m = container.metricsCollector.latestMetrics
-        Button("PulseMonitor") {}
-            .disabled(true)
+        HStack(spacing: 8) {
+            Image(nsImage: BrandArtwork.logo)
+                .resizable()
+                .frame(width: 18, height: 18)
+            Text("PulseMonitor")
+                .font(.headline)
+        }
+        .disabled(true)
         Divider()
         Text(String(format: "CPU  %.1f%%", m?.cpu.totalUsage ?? 0))
         Text(String(format: "GPU  %.1f%%", m?.gpu.utilization ?? 0))

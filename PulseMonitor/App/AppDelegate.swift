@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // hides ordinary windows. Keep us a regular app so the main window stays
         // first-class alongside the menu bar item.
         NSApp.setActivationPolicy(.regular)
+        NSApp.applicationIconImage = BrandArtwork.appIcon
         NSWindow.allowsAutomaticWindowTabbing = true
         UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
 

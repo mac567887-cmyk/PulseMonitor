@@ -14,6 +14,10 @@
 	<string>PulseMonitor</string>
 	<key>CFBundleDisplayName</key>
 	<string>PulseMonitor</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
