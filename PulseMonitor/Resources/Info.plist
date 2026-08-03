@@ -21,9 +21,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0.0</string>
+	<string>3.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>2.0.0</string>
+	<string>3.0.0</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -40,5 +40,9 @@
 	<string>PulseMonitor uses System Events to change the system appearance between light and dark mode. This is only used when you toggle the control yourself.</string>
 	<key>NSDesktopFolderUsageDescription</key>
 	<string>PulseMonitor needs access to choose a desktop picture when you set a wallpaper.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>PulseMonitor’s Bluetooth Lab scans for nearby peripherals to show signal strength. Scanning only runs when you start it.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>PulseMonitor’s optional Web Dashboard can serve metrics on your local network when you enable it. A token is required.</string>
 </dict>
 </plist>

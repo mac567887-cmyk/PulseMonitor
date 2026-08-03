@@ -2,12 +2,14 @@ import SwiftUI
 
 /// Every module the app can show, in sidebar order.
 public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
-    case dashboard, insights, analysis
+    case dashboard, insights, analysis, health, copilot, search
     case cpu, gpu, memory, thermal, storage, network, battery
-    case processes, applications, widgets
-    case controlCenter, fans, profiles, optimizer, plugins
-    case benchmarks, systemMap, timeline, history, logs
-    case games, reports, settings
+    case processes, applications, widgets, games, gameLab
+    case controlCenter, fans, profiles, optimizer, plugins, workspaces
+    case benchmarks, systemMap, digitalTwin, hardwareDB
+    case usbLab, bluetoothLab, displayLab, windowServer, developerLab
+    case packages, snapshots, timeline, history, logs, logAnalyzer
+    case menuBarStudio, webDashboard, reports, settings
 
     public var id: String { rawValue }
 
@@ -16,6 +18,9 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .dashboard: "Dashboard"
         case .insights: "Insights"
         case .analysis: "Analysis"
+        case .health: "Health Score"
+        case .copilot: "AI Copilot"
+        case .search: "Search"
         case .cpu: "CPU"
         case .gpu: "GPU"
         case .memory: "Memory"
@@ -26,17 +31,31 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .processes: "Processes"
         case .applications: "Applications"
         case .widgets: "Widgets"
+        case .games: "Games"
+        case .gameLab: "Game Lab"
         case .controlCenter: "Control Center"
         case .fans: "Fans & Sensors"
         case .profiles: "Profiles"
         case .optimizer: "Optimizer"
         case .plugins: "Plugins"
+        case .workspaces: "Workspaces"
         case .benchmarks: "Benchmarks"
         case .systemMap: "System Map"
+        case .digitalTwin: "Digital Twin"
+        case .hardwareDB: "Hardware DB"
+        case .usbLab: "USB Devices"
+        case .bluetoothLab: "Bluetooth Lab"
+        case .displayLab: "Display Lab"
+        case .windowServer: "WindowServer"
+        case .developerLab: "Developer Lab"
+        case .packages: "Packages"
+        case .snapshots: "Snapshots"
         case .timeline: "Timeline"
         case .history: "History"
         case .logs: "Logs"
-        case .games: "Games"
+        case .logAnalyzer: "Log Analyzer"
+        case .menuBarStudio: "Menu Bar Studio"
+        case .webDashboard: "Web Dashboard"
         case .reports: "Reports"
         case .settings: "Settings"
         }
@@ -47,6 +66,9 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .dashboard: "gauge.with.dots.needle.67percent"
         case .insights: "sparkles"
         case .analysis: "stethoscope"
+        case .health: "heart.text.square"
+        case .copilot: "bubble.left.and.bubble.right"
+        case .search: "magnifyingglass"
         case .cpu: "cpu"
         case .gpu: "cube"
         case .memory: "memorychip"
@@ -57,27 +79,41 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
         case .processes: "list.bullet.rectangle"
         case .applications: "square.grid.2x2"
         case .widgets: "rectangle.3.group"
+        case .games: "gamecontroller"
+        case .gameLab: "flag.checkered"
         case .controlCenter: "switch.2"
         case .fans: "fan.fill"
         case .profiles: "slider.horizontal.3"
         case .optimizer: "wand.and.stars"
         case .plugins: "puzzlepiece.extension"
+        case .workspaces: "square.grid.3x3"
         case .benchmarks: "speedometer"
         case .systemMap: "point.3.connected.trianglepath.dotted"
+        case .digitalTwin: "rotate.3d"
+        case .hardwareDB: "shippingbox"
+        case .usbLab: "cable.connector"
+        case .bluetoothLab: "wave.3.right"
+        case .displayLab: "display"
+        case .windowServer: "macwindow"
+        case .developerLab: "hammer"
+        case .packages: "shippingbox.fill"
+        case .snapshots: "camera.viewfinder"
         case .timeline: "clock.arrow.circlepath"
         case .history: "chart.xyaxis.line"
         case .logs: "doc.text.magnifyingglass"
-        case .games: "gamecontroller"
+        case .logAnalyzer: "waveform.path.ecg"
+        case .menuBarStudio: "menubar.rectangle"
+        case .webDashboard: "globe"
         case .reports: "doc.richtext"
         case .settings: "gearshape"
         }
     }
 
-    /// Sidebar grouping.
     public enum Section: String, CaseIterable, Identifiable {
         case overview = "Overview"
         case hardware = "Hardware"
         case activity = "Activity"
+        case labs = "Labs"
         case control = "Control"
         case tools = "Tools"
 
@@ -85,11 +121,12 @@ public enum SidebarItem: String, CaseIterable, Identifiable, Hashable, Codable {
 
         public var items: [SidebarItem] {
             switch self {
-            case .overview: [.dashboard, .insights, .analysis, .widgets]
-            case .hardware: [.cpu, .gpu, .memory, .thermal, .storage, .network, .battery]
-            case .activity: [.processes, .applications, .games]
-            case .control: [.controlCenter, .fans, .profiles, .optimizer, .plugins]
-            case .tools: [.benchmarks, .systemMap, .timeline, .history, .logs, .reports, .settings]
+            case .overview: [.dashboard, .health, .copilot, .insights, .analysis, .search, .widgets]
+            case .hardware: [.cpu, .gpu, .memory, .thermal, .storage, .network, .battery, .hardwareDB]
+            case .activity: [.processes, .applications, .games, .gameLab]
+            case .labs: [.digitalTwin, .systemMap, .usbLab, .bluetoothLab, .displayLab, .windowServer, .developerLab]
+            case .control: [.controlCenter, .fans, .profiles, .optimizer, .workspaces, .plugins, .menuBarStudio]
+            case .tools: [.snapshots, .timeline, .history, .logs, .logAnalyzer, .packages, .benchmarks, .webDashboard, .reports, .settings]
             }
         }
     }
@@ -112,13 +149,44 @@ public struct ContentView: View {
             ModuleDetail(container: container, item: selection ?? .dashboard)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .toolbar { toolbarContent }
-                // Re-running the transition on each selection keeps navigation
-                // feeling responsive without animating the metric values inside.
                 .transition(.opacity)
                 .animation(DesignTokens.Motion.quick, value: selection)
         }
         .environment(\.theme, container.settings.theme)
         .tint(container.settings.theme.accent)
+        .searchable(text: Bindable(container.v3).searchQuery, prompt: "Search PulseMonitor")
+        .onChange(of: container.v3.searchQuery) { _, _ in
+            container.v3.updateSearch(
+                processes: container.metricsCollector.latestProcesses,
+                events: container.eventLogService.events
+            )
+            if !container.v3.searchQuery.isEmpty {
+                selection = .search
+            }
+        }
+        .onChange(of: container.metricsCollector.latestMetrics?.timestamp) { _, _ in
+            refreshV3()
+        }
+        .task {
+            refreshV3()
+            await container.v3.refreshHardware()
+            container.v3.usb.refresh()
+            container.v3.displays.refresh()
+        }
+    }
+
+    private func refreshV3() {
+        guard let metrics = container.metricsCollector.latestMetrics else { return }
+        let processes = container.metricsCollector.latestProcesses
+        let findings = container.metricsCollector.latestAnalysis?.findings ?? []
+        let games = processes.filter(\.isGame)
+        container.v3.tick(
+            metrics: metrics,
+            processes: processes,
+            findings: findings,
+            games: games,
+            events: container.eventLogService.events
+        )
     }
 
     private var sidebar: some View {
@@ -137,20 +205,20 @@ public struct ContentView: View {
                 }
             }
         }
-        .navigationSplitViewColumnWidth(min: 200, ideal: 218, max: 280)
+        .navigationSplitViewColumnWidth(min: 200, ideal: 228, max: 300)
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom) { profileFooter }
     }
 
-    /// Persistent profile indicator so the active monitoring behaviour is never
-    /// a mystery.
     private var profileFooter: some View {
         HStack(spacing: 8) {
             BrandMark(size: 28)
             VStack(alignment: .leading, spacing: 0) {
                 Text(container.settings.activeProfile.displayName)
                     .font(.caption.weight(.medium))
-                Text(String(format: "%.1fs sampling", container.settings.refreshIntervalSeconds))
+                Text(String(format: "%.1fs · health %.0f",
+                               container.settings.refreshIntervalSeconds,
+                               container.v3.health?.overall ?? 100))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .monospacedDigit()
@@ -160,7 +228,6 @@ public struct ContentView: View {
                 Image(systemName: "rectangle.on.rectangle.angled")
                     .font(.caption)
                     .foregroundStyle(container.settings.theme.accent)
-                    .help("Performance overlay is visible")
             }
         }
         .padding(.horizontal, 12)
@@ -178,7 +245,6 @@ public struct ContentView: View {
                 Label("Overlay", systemImage: "rectangle.on.rectangle.angled")
             }
             .toggleStyle(.button)
-            .help("Show the floating performance overlay")
         }
 
         ToolbarItem(placement: .primaryAction) {
@@ -195,7 +261,6 @@ public struct ContentView: View {
             } label: {
                 Label("Profile", systemImage: container.settings.activeProfile.symbol)
             }
-            .help("Switch power profile")
         }
 
         ToolbarItem(placement: .primaryAction) {
@@ -212,7 +277,6 @@ public struct ContentView: View {
             } label: {
                 Label("Theme", systemImage: "paintpalette")
             }
-            .help("Change appearance")
         }
 
         ToolbarItem(placement: .primaryAction) {
@@ -223,15 +287,11 @@ public struct ContentView: View {
             } label: {
                 Label("New Window", systemImage: "macwindow.badge.plus")
             }
-            .help("Open this module in its own window")
         }
     }
 }
 
 /// Resolves a sidebar item to its module view.
-///
-/// Shared by the main split view and every torn-off window so both routes stay
-/// identical.
 public struct ModuleDetail: View {
     let container: AppContainer
     let item: SidebarItem
@@ -254,6 +314,16 @@ public struct ModuleDetail: View {
             InsightsView(viewModel: container.insightsViewModel)
         case .analysis:
             AnalysisDetailView(viewModel: container.analysisViewModel)
+        case .health:
+            HealthScoreView(report: container.v3.health, history: container.v3.healthHistory)
+        case .copilot:
+            CopilotView(messages: container.v3.copilotMessages)
+        case .search:
+            UniversalSearchView(
+                query: Bindable(container.v3).searchQuery,
+                hits: container.v3.searchHits,
+                onOpen: { _ in }
+            )
         case .cpu:
             CPUView(viewModel: container.cpuViewModel)
         case .gpu:
@@ -278,6 +348,10 @@ public struct ModuleDetail: View {
                 collector: container.metricsCollector,
                 pluginHost: container.pluginHost
             )
+        case .games:
+            GamesView(viewModel: container.gamesViewModel)
+        case .gameLab:
+            GameLabView(service: container.v3.gameLab)
         case .controlCenter:
             ControlCenterView(viewModel: container.controlCenterViewModel)
         case .fans:
@@ -292,6 +366,13 @@ public struct ModuleDetail: View {
             OptimizerView(viewModel: container.optimizerViewModel)
         case .plugins:
             PluginsView(host: container.pluginHost)
+        case .workspaces:
+            WorkspacesView(
+                store: container.v3.workspaces,
+                settings: container.settings,
+                profiles: container.powerProfileService,
+                onApply: { _ in }
+            )
         case .benchmarks:
             BenchmarkView(viewModel: container.benchmarkViewModel)
         case .systemMap:
@@ -300,6 +381,37 @@ public struct ModuleDetail: View {
                 host: container.controlCenterViewModel.host
             )
             .task { await container.controlCenterViewModel.load() }
+        case .digitalTwin:
+            DigitalTwinView(twin: container.v3.twin)
+        case .hardwareDB:
+            HardwareDatabaseView(inventory: container.v3.hardware) {
+                Task { await container.v3.refreshHardware() }
+            }
+        case .usbLab:
+            USBLabView(service: container.v3.usb)
+        case .bluetoothLab:
+            BluetoothLabView(service: container.v3.bluetooth)
+        case .displayLab:
+            DisplayLabView(service: container.v3.displays)
+        case .windowServer:
+            WindowServerLabView(processes: container.metricsCollector.latestProcesses)
+        case .developerLab:
+            DeveloperLabView(
+                processes: container.metricsCollector.latestProcesses,
+                metrics: container.metricsCollector.latestMetrics
+            )
+        case .packages:
+            PackageManagerView(service: container.v3.packages)
+        case .snapshots:
+            SnapshotsView(service: container.v3.snapshots) {
+                if let metrics = container.metricsCollector.latestMetrics {
+                    container.v3.captureSnapshot(
+                        metrics: metrics,
+                        analysis: container.metricsCollector.latestAnalysis,
+                        processes: container.metricsCollector.latestProcesses
+                    )
+                }
+            }
         case .timeline:
             TimelineView(
                 history: container.historyRepository,
@@ -310,8 +422,12 @@ public struct ModuleDetail: View {
             HistoryView(viewModel: container.historyViewModel)
         case .logs:
             EventLogView(eventLog: container.eventLogService)
-        case .games:
-            GamesView(viewModel: container.gamesViewModel)
+        case .logAnalyzer:
+            LogAnalyzerView(events: container.eventLogService.events)
+        case .menuBarStudio:
+            MenuBarStudioView(store: container.v3.menuBarStudio)
+        case .webDashboard:
+            WebDashboardView(server: container.v3.webDashboard)
         case .reports:
             ReportsView(container: container)
         case .settings:

@@ -9,6 +9,29 @@ A macOS hardware monitoring and control centre built to explain **why** a Mac is
 ![UI](https://img.shields.io/badge/SwiftUI-Charts-green)
 ![Privacy](https://img.shields.io/badge/Telemetry-None-success)
 
+## Version 3.0 — Professional Edition
+
+Version 3 adds a digital twin, multi-category health scoring, an AI performance
+copilot, game lab, hardware labs, snapshots/diff, workspaces, menu-bar studio,
+and an optional token-gated local web dashboard — still without inventing sensors.
+
+| Module | What it does |
+|--------|--------------|
+| **Health Score** | 0–100 across CPU/GPU/Battery/Storage/Memory/Cooling/Network/Power/Security/Software with change reasons |
+| **Digital Twin** | Interactive SceneKit model; components colour by heat/load; predictions labeled as estimates |
+| **AI Copilot** | Plain-language explanations grounded only in measured samples and findings |
+| **Game Lab** | Session recording, library, shader-surge heuristics, Java/Minecraft process insights (no fake FPS) |
+| **Snapshots** | One-click captures with side-by-side difference mode |
+| **Hardware DB** | Model, CPU, GPU, memory, displays, USB, PCI from sysctl / IOKit / Metal |
+| **USB / Bluetooth / Display Labs** | Live device lists; eject when BSD name exists; BT scan with RSSI; refresh-rate change detection |
+| **WindowServer / Developer Lab** | Honest process-level cost only — no private GPU frame capture |
+| **Packages** | Detects Homebrew, Python, Node, Java, Rust, Go, Swift toolchains on disk |
+| **Workspaces** | Gaming / Programming / Battery / Monitoring / Streaming / Editing presets |
+| **Menu Bar Studio** | Compose which metrics appear in the menu bar |
+| **Web Dashboard** | Optional localhost HTTP UI with rotating auth token |
+| **Log Analyzer** | Groups crash, thermal and sleep/wake events from the existing event log |
+| **Universal Search** | Find modules, processes, hardware and commands from one field |
+
 ## Version 2.0 — Tahoe Update
 
 Version 2 turns PulseMonitor from a monitor into a control centre: real SMC sensor
@@ -49,7 +72,9 @@ measure. Every gated feature states its reason in the UI:
 | Feature | Status | Reason |
 |---------|--------|--------|
 | Manual fan control | Disabled | Apple Silicon blocks it outright. On Intel it needs a privileged SMC helper, which this app does not install. |
-| Frame rate in overlay | Not offered | Reading another app's frame rate requires private APIs or Metal's HUD. |
+| Frame rate / FPS estimates | Not offered | Reading another app's frame rate requires private APIs or Metal's HUD. |
+| Neural Engine load | Marked unavailable | No public utilization API. |
+| Bluetooth codec / audio quality | Not offered | Not published by CoreBluetooth on macOS. |
 | Night Shift / True Tone | Disabled | Controlled by the private CoreBrightness framework. |
 | Do Not Disturb / Focus | Disabled | No public API exists. |
 | Low Power Mode, sleep timers, GPU switching | Read-only | Readable via `pmset`; writing them needs administrator rights. |

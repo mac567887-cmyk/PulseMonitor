@@ -6,27 +6,8 @@ public struct MenuBarLabel: View {
 
     public var body: some View {
         let metrics = container.metricsCollector.latestMetrics
-        let text: String = {
-            switch container.settings.menuBarMetric {
-            case .cpu:
-                return String(format: "CPU %.0f%%", metrics?.cpu.totalUsage ?? 0)
-            case .memory:
-                return String(format: "MEM %.0f%%", metrics?.memory.usagePercent ?? 0)
-            case .temperature:
-                if let t = metrics?.thermal.cpuTemperatureC ?? metrics?.thermal.batteryTemperatureC {
-                    return String(format: "%.0f°C", t)
-                }
-                return metrics?.thermal.thermalState.displayName ?? "Therm"
-            case .network:
-                return Formatters.bytesPerSecond(metrics?.network.bytesInPerSec ?? 0)
-            case .battery:
-                if let c = metrics?.battery.chargePercent, metrics?.battery.isPresent == true {
-                    return String(format: "BAT %.0f%%", c)
-                }
-                return "AC"
-            }
-        }()
-        // Menu bar extras prefer a compact coloured mark plus the live metric.
+        let studio = container.v3.menuBarStudio.label(metrics: metrics)
+        let text = studio.isEmpty ? fallback(metrics) : studio
         Label {
             Text(text)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -37,6 +18,27 @@ public struct MenuBarLabel: View {
                 .frame(width: 14, height: 14)
         }
         .labelStyle(.titleAndIcon)
+    }
+
+    private func fallback(_ metrics: SystemMetrics?) -> String {
+        switch container.settings.menuBarMetric {
+        case .cpu:
+            return String(format: "CPU %.0f%%", metrics?.cpu.totalUsage ?? 0)
+        case .memory:
+            return String(format: "MEM %.0f%%", metrics?.memory.usagePercent ?? 0)
+        case .temperature:
+            if let t = metrics?.thermal.cpuTemperatureC ?? metrics?.thermal.batteryTemperatureC {
+                return String(format: "%.0f°C", t)
+            }
+            return metrics?.thermal.thermalState.displayName ?? "Therm"
+        case .network:
+            return Formatters.bytesPerSecond(metrics?.network.bytesInPerSec ?? 0)
+        case .battery:
+            if let c = metrics?.battery.chargePercent, metrics?.battery.isPresent == true {
+                return String(format: "BAT %.0f%%", c)
+            }
+            return "AC"
+        }
     }
 }
 

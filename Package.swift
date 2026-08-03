@@ -33,6 +33,9 @@ let package = Package(
                 .linkedFramework("AppKit"),
                 .linkedFramework("UserNotifications"),
                 .linkedFramework("AppIntents"),
+                .linkedFramework("SceneKit"),
+                .linkedFramework("Network"),
+                .linkedFramework("CoreBluetooth"),
                 .linkedLibrary("sqlite3"),
                 .linkedLibrary("proc")
             ]

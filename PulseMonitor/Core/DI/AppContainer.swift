@@ -35,6 +35,7 @@ public final class AppContainer {
     public let pluginHost: PluginHost
     public let widgetBoardStore: WidgetBoardStore
     public let liveWallpaperService: LiveWallpaperService
+    public let v3: V3Session
 
     public let dashboardViewModel: DashboardViewModel
     public let cpuViewModel: CPUViewModel
@@ -161,6 +162,10 @@ public final class AppContainer {
             collector: collector, history: history, eventLog: eventLog, engine: InsightEngine()
         )
         self.overlayViewModel = OverlayViewModel(collector: collector, settings: settings)
+
+        let v3 = V3Session()
+        v3.bind(collector: collector)
+        self.v3 = v3
 
         collector.automationEngine = automation
         collector.eventLog = eventLog
