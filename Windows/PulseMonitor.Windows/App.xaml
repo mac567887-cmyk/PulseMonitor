@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="PulseMonitor.Windows.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            <Color x:Key="PulseBg">#FF0B0F14</Color>
+            <Color x:Key="PulsePanel">#FF141A22</Color>
+            <Color x:Key="PulseAccent">#FF3D9CF0</Color>
+            <SolidColorBrush x:Key="PulseBgBrush" Color="{StaticResource PulseBg}" />
+            <SolidColorBrush x:Key="PulsePanelBrush" Color="{StaticResource PulsePanel}" />
+            <SolidColorBrush x:Key="PulseAccentBrush" Color="{StaticResource PulseAccent}" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

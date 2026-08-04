@@ -1,0 +1,42 @@
+{
+  "platform": "Windows",
+  "version": "4.0.0",
+  "controls": {
+    "fanWrite": {
+      "default": "unsupported",
+      "reason": "Requires vendor EC/BMC interfaces (often proprietary). Enabled only when a signed vendor bridge is present."
+    },
+    "rgbControl": {
+      "default": "unsupported",
+      "reason": "Requires ASUS/MSI/Gigabyte/Corsair/Razer/etc SDKs. PulseMonitor catalogues devices; write paths load only with optional bridges."
+    },
+    "overclockApply": {
+      "default": "requiresConfirmation",
+      "reason": "Read-only by default. Apply paths require explicit confirmation and a supported vendor API."
+    },
+    "overlayInAntiCheat": {
+      "default": "warn",
+      "reason": "Overlays are disabled or warned when known anti-cheat processes are detected."
+    }
+  },
+  "sensors": {
+    "cpuUsage": "supported",
+    "cpuPerCore": "supported",
+    "cpuTemperature": "bestEffort",
+    "gpuUsage": "bestEffort",
+    "gpuTemperature": "bestEffort",
+    "gpuVram": "bestEffort",
+    "memory": "supported",
+    "diskIo": "supported",
+    "network": "supported",
+    "battery": "supported",
+    "smart": "bestEffort",
+    "rayTracingUtilization": "unsupported",
+    "tensorCoreUtilization": "unsupported",
+    "psuTelemetry": "unsupported"
+  },
+  "notes": [
+    "bestEffort means WMI/PDH/DXGI may return values on some machines and null on others.",
+    "unsupported means no honest public API path is implemented; UI must not invent numbers."
+  ]
+}

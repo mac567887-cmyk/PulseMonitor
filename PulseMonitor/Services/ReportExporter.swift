@@ -44,10 +44,11 @@ public actor ReportExporter {
     }
 
     public func exportJSON(_ report: ReportPayload, to url: URL) throws {
+        // v4 unified schema shared with the Windows edition (`Shared/Schemas/report.schema.json`).
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        try encoder.encode(report).write(to: url)
+        try encoder.encode(CrossPlatformReport.from(payload: report)).write(to: url)
     }
 
     public func exportCSV(_ report: ReportPayload, to url: URL) throws {

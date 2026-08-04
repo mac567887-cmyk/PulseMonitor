@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulsemonitor.local/schemas/plugin.manifest.schema.json",
+  "title": "PulseMonitorPluginManifest",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name", "platforms", "capabilities"],
+  "properties": {
+    "schemaVersion": { "const": "4.0.0" },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "platforms": {
+      "type": "array",
+      "items": { "enum": ["macOS", "Windows"] }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "enum": ["sensorRead", "widget", "insightRule", "reportSection", "theme"]
+      }
+    },
+    "nativeBinary": {
+      "type": "object",
+      "description": "Optional per-OS native code. Unsigned binaries are refused.",
+      "properties": {
+        "macOS": { "type": "string" },
+        "Windows": { "type": "string" }
+      }
+    }
+  }
+}

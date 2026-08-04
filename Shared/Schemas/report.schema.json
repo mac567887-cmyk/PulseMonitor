@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulsemonitor.local/schemas/report.schema.json",
+  "title": "PulseMonitorDiagnosticReport",
+  "type": "object",
+  "required": ["schemaVersion", "platform", "generatedAt", "hardware", "metrics", "analysis"],
+  "properties": {
+    "schemaVersion": { "const": "4.0.0" },
+    "platform": { "enum": ["macOS", "Windows"] },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "hardware": {
+      "type": "object",
+      "properties": {
+        "modelIdentifier": { "type": ["string", "null"] },
+        "cpuBrand": { "type": ["string", "null"] },
+        "gpuName": { "type": ["string", "null"] },
+        "memoryBytes": { "type": ["integer", "null"] },
+        "osVersion": { "type": "string" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "cpuPercent": { "type": "number" },
+        "gpuPercent": { "type": ["number", "null"] },
+        "memoryPercent": { "type": "number" },
+        "thermalState": { "type": "string" },
+        "batteryPercent": { "type": ["number", "null"] },
+        "diskReadBps": { "type": "number" },
+        "diskWriteBps": { "type": "number" },
+        "networkInBps": { "type": "number" },
+        "networkOutBps": { "type": "number" }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "properties": {
+        "overallHealthScore": { "type": "number" },
+        "narrative": { "type": "string" },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "severity": { "enum": ["info", "warning", "critical"] },
+              "title": { "type": "string" },
+              "summary": { "type": "string" },
+              "recommendations": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "recommendations": { "type": "array", "items": { "type": "string" } }
+  }
+}

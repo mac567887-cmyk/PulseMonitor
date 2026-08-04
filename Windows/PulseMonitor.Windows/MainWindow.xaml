@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="PulseMonitor.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="PulseMonitor">
+    <Grid Background="{StaticResource PulseBgBrush}">
+        <NavigationView
+            x:Name="Nav"
+            PaneDisplayMode="Left"
+            IsSettingsVisible="True"
+            IsBackButtonVisible="Collapsed"
+            OpenPaneLength="240"
+            SelectionChanged="Nav_SelectionChanged"
+            Background="{StaticResource PulseBgBrush}">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Dashboard" Tag="dashboard" Icon="Home" />
+                <NavigationViewItem Content="CPU" Tag="cpu" Icon="Clock" />
+                <NavigationViewItem Content="GPU / DirectX" Tag="gpu" Icon="View" />
+                <NavigationViewItem Content="Memory" Tag="memory" Icon="Library" />
+                <NavigationViewItem Content="Storage" Tag="storage" Icon="Folder" />
+                <NavigationViewItem Content="Devices" Tag="devices" Icon="CellPhone" />
+                <NavigationViewItem Content="Processes" Tag="processes" Icon="List" />
+                <NavigationViewItem Content="Services" Tag="services" Icon="Setting" />
+                <NavigationViewItem Content="Event Viewer" Tag="events" Icon="Message" />
+                <NavigationViewItem Content="BSOD Analyzer" Tag="bsod" Icon="Flag" />
+                <NavigationViewItem Content="Driver Center" Tag="drivers" Icon="Setting" />
+                <NavigationViewItem Content="Gaming Hub" Tag="gaming" Icon="Play" />
+                <NavigationViewItem Content="Anti-Cheat" Tag="anticheat" Icon="Important" />
+                <NavigationViewItem Content="Windows Update" Tag="updates" Icon="Sync" />
+                <NavigationViewItem Content="Control Center" Tag="controls" Icon="Admin" />
+                <NavigationViewItem Content="AI Insights" Tag="insights" Icon="Comment" />
+                <NavigationViewItem Content="Reports / Sync" Tag="reports" Icon="Save" />
+            </NavigationView.MenuItems>
+            <ScrollViewer Padding="24">
+                <StackPanel x:Name="ContentHost" Spacing="16" />
+            </ScrollViewer>
+        </NavigationView>
+    </Grid>
+</Window>

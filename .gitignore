@@ -20,3 +20,9 @@ crash.ips
 *.ips
 run-*.log
 dist/
+Windows/**/bin/
+Windows/**/obj/
+Windows/.vs/
+*.user
+*.suo
+docs-icon.png

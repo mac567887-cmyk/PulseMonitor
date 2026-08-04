@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulsemonitor.local/schemas/sync-profile.schema.json",
+  "title": "PulseMonitorSyncBundle",
+  "type": "object",
+  "required": ["schemaVersion", "exportedAt", "settings", "workspaces", "automationRules", "theme"],
+  "properties": {
+    "schemaVersion": { "const": "4.0.0" },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "refreshIntervalSeconds": { "type": "number" },
+        "overlayEnabled": { "type": "boolean" },
+        "notificationsEnabled": { "type": "boolean" },
+        "activeProfile": { "type": "string" }
+      }
+    },
+    "theme": { "type": "string" },
+    "workspaces": { "type": "array" },
+    "automationRules": { "type": "array" },
+    "menuBarStudio": { "type": "object" },
+    "widgetBoard": { "type": "array" }
+  }
+}
