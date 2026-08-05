@@ -1,0 +1,85 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Windows/**"
+      - ".github/workflows/windows-build.yml"
+  pull_request:
+    paths:
+      - "Windows/**"
+      - ".github/workflows/windows-build.yml"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub release tag to attach the Windows zip to (empty = skip)"
+        required: false
+        default: "v4.0.0"
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish self-contained win-x64 (WPF app)
+        run: >
+          dotnet publish Windows/PulseMonitor.App/PulseMonitor.App.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishReadyToRun=true
+          -p:DebugType=None
+          -o artifacts/PulseMonitor-Windows
+
+      - name: Smoke-check executable
+        shell: pwsh
+        run: |
+          $exe = "artifacts/PulseMonitor-Windows/PulseMonitor.exe"
+          if (-not (Test-Path $exe)) {
+            Get-ChildItem -Recurse artifacts | Select-Object FullName
+            throw "Published EXE not found at $exe"
+          }
+          Write-Host "Found $exe ($((Get-Item $exe).Length) bytes)"
+
+      - name: Zip package
+        shell: pwsh
+        run: |
+          $version = "4.0.0"
+          if ($env:GITHUB_REF_TYPE -eq "tag") { $version = $env:GITHUB_REF_NAME.TrimStart("v") }
+          $zipName = "PulseMonitor-$version-win-x64.zip"
+          Compress-Archive -Path "artifacts/PulseMonitor-Windows/*" -DestinationPath "artifacts/$zipName" -Force
+          "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "ZIP_PATH=artifacts/$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseMonitor-Windows-x64
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+      - name: Attach zip to GitHub Release
+        if: >
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = if ($env:GITHUB_EVENT_NAME -eq "release") { $env:GITHUB_REF_NAME } else { "${{ inputs.release_tag }}" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { throw "No release tag" }
+          gh release upload $tag "$env:ZIP_PATH" --clobber
+          Write-Host "Uploaded $env:ZIP_NAME to release $tag"

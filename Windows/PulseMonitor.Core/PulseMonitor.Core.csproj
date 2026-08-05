@@ -6,6 +6,7 @@
     <RootNamespace>PulseMonitor.Core</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget Condition="'$(Platform)' == 'x64'">x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />

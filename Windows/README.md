@@ -20,14 +20,26 @@ dotnet run --project PulseMonitor.Windows -c Release -p:Platform=x64
 
 The app is unpackaged (`WindowsPackageType=None`) for simpler local runs.
 
+### CI / GitHub Release
+
+GitHub Actions (`.github/workflows/windows-build.yml`) publishes a self-contained
+`PulseMonitor-*-win-x64.zip` on `windows-latest` and can attach it to a release
+tag (e.g. `v4.0.0`) via **Actions → Windows Build → Run workflow**.
+
 ## Layout
 
 | Project | Role |
 |---------|------|
 | `PulseMonitor.Core` | HAL, sensors, analytics, reports, sync (no UI) |
-| `PulseMonitor.Windows` | WinUI 3 navigation shell |
+| `PulseMonitor.App` | **Shipped** WPF shell (CI publishes this as `PulseMonitor.exe`) |
+| `PulseMonitor.Windows` | WinUI 3 shell (optional / Visual Studio) |
 
 Shared JSON contracts live in `../Shared/Schemas/`.
+
+```powershell
+# Recommended local run (same binary CI ships)
+dotnet run --project PulseMonitor.App -c Release -r win-x64
+```
 
 ## Honesty
 

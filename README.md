@@ -111,10 +111,16 @@ open build/PulseMonitor.app
 
 ### Windows
 
+Download **`PulseMonitor-4.0.0-win-x64.zip`** from the
+[v4.0.0 release](https://github.com/mac567887-cmyk/PulseMonitor/releases/tag/v4.0.0),
+unzip, and run `PulseMonitor.exe`.
+
+Or build from source:
+
 ```powershell
 cd Windows
-dotnet build PulseMonitor.sln -c Release -p:Platform=x64
-dotnet run --project PulseMonitor.Windows -c Release -p:Platform=x64
+dotnet publish PulseMonitor.App/PulseMonitor.App.csproj -c Release -r win-x64 --self-contained true -o .\publish
+.\publish\PulseMonitor.exe
 ```
 
 ## Privacy
