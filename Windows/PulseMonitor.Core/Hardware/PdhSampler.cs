@@ -83,7 +83,7 @@ public sealed class PdhSampler : IDisposable
     {
         EnsureInitialized();
         if (_cpuCores.Count == 0) return Array.Empty<double>();
-        return _cpuCores.Select(c => Math.Clamp(c.NextValue(), 0, 100)).ToArray();
+        return _cpuCores.Select(c => (double)Math.Clamp(c.NextValue(), 0f, 100f)).ToArray();
     }
 
     public (double read, double write) SampleDisk()
