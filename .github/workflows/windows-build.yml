@@ -56,9 +56,14 @@ jobs:
 
       - name: Zip package
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: |
-          $version = "4.0.0"
+          $version = "5.0.0"
           if ($env:GITHUB_REF_TYPE -eq "tag") { $version = $env:GITHUB_REF_NAME.TrimStart("v") }
+          elseif (-not [string]::IsNullOrWhiteSpace($env:RELEASE_TAG) -and $env:RELEASE_TAG.StartsWith("v")) {
+            $version = $env:RELEASE_TAG.TrimStart("v")
+          }
           $zipName = "PulseMonitor-$version-win-x64.zip"
           Compress-Archive -Path "artifacts/PulseMonitor-Windows/*" -DestinationPath "artifacts/$zipName" -Force
           "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append
