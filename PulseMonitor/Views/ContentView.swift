@@ -187,6 +187,15 @@ public struct ContentView: View {
             games: games,
             events: container.eventLogService.events
         )
+        container.athena.tick(
+            metrics: metrics,
+            processes: processes,
+            findings: findings,
+            games: games,
+            samples: container.metricsCollector.recentSamples,
+            healthOverall: container.v3.health?.overall,
+            settings: container.settings
+        )
     }
 
     private var sidebar: some View {
@@ -317,7 +326,13 @@ public struct ModuleDetail: View {
         case .health:
             HealthScoreView(report: container.v3.health, history: container.v3.healthHistory)
         case .copilot:
-            CopilotView(messages: container.v3.copilotMessages)
+            AICopilotDashboard(
+                athena: container.athena,
+                health: container.v3.health,
+                healthHistory: container.v3.healthHistory,
+                legacyMessages: container.v3.copilotMessages,
+                developerMode: container.settings.developerModeEnabled || container.settings.aiDeveloperReasoning
+            )
         case .search:
             UniversalSearchView(
                 query: Bindable(container.v3).searchQuery,

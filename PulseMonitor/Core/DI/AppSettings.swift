@@ -131,6 +131,63 @@ public final class AppSettings {
         }
     }
 
+    // MARK: - Version 5 Athena / PIE
+
+    public var aiLearningEnabled: Bool {
+        didSet {
+            guard oldValue != aiLearningEnabled else { return }
+            defaults.set(aiLearningEnabled, forKey: Keys.aiLearning)
+        }
+    }
+    public var aiConfidenceThreshold: Double {
+        didSet {
+            guard oldValue != aiConfidenceThreshold else { return }
+            defaults.set(aiConfidenceThreshold, forKey: Keys.aiConfidence)
+        }
+    }
+    public var aiInsightDetail: AIInsightDetail {
+        didSet {
+            guard oldValue != aiInsightDetail else { return }
+            defaults.set(aiInsightDetail.rawValue, forKey: Keys.aiInsightDetail)
+        }
+    }
+    public var aiPredictionFrequency: AIPredictionFrequency {
+        didSet {
+            guard oldValue != aiPredictionFrequency else { return }
+            defaults.set(aiPredictionFrequency.rawValue, forKey: Keys.aiPredictionFreq)
+        }
+    }
+    public var aiNotificationStyle: AINotificationStyle {
+        didSet {
+            guard oldValue != aiNotificationStyle else { return }
+            defaults.set(aiNotificationStyle.rawValue, forKey: Keys.aiNotifyStyle)
+        }
+    }
+    public var aiDeveloperReasoning: Bool {
+        didSet {
+            guard oldValue != aiDeveloperReasoning else { return }
+            defaults.set(aiDeveloperReasoning, forKey: Keys.aiDevReasoning)
+        }
+    }
+
+    public enum AIInsightDetail: String, CaseIterable, Identifiable, Codable {
+        case concise, standard, detailed
+        public var id: String { rawValue }
+        public var displayName: String { rawValue.capitalized }
+    }
+
+    public enum AIPredictionFrequency: String, CaseIterable, Identifiable, Codable {
+        case low, normal, high
+        public var id: String { rawValue }
+        public var displayName: String { rawValue.capitalized }
+    }
+
+    public enum AINotificationStyle: String, CaseIterable, Identifiable, Codable {
+        case quiet, smart, verbose
+        public var id: String { rawValue }
+        public var displayName: String { rawValue.capitalized }
+    }
+
     /// Metrics that may appear in the floating overlay.
     public enum OverlayMetric: String, CaseIterable, Identifiable, Codable, Sendable {
         case cpu, gpu, memory, temperature, battery, network, disk
@@ -192,6 +249,12 @@ public final class AppSettings {
         static let activeProfile = "activeProfile"
         static let automation = "automationEnabled"
         static let developerMode = "developerModeEnabled"
+        static let aiLearning = "aiLearningEnabled"
+        static let aiConfidence = "aiConfidenceThreshold"
+        static let aiInsightDetail = "aiInsightDetail"
+        static let aiPredictionFreq = "aiPredictionFrequency"
+        static let aiNotifyStyle = "aiNotificationStyle"
+        static let aiDevReasoning = "aiDeveloperReasoning"
     }
 
     public init(defaults: UserDefaults = .standard) {
@@ -226,5 +289,14 @@ public final class AppSettings {
         self.activeProfile = PowerProfile.Kind(rawValue: profileRaw) ?? .balanced
         self.automationEnabled = defaults.object(forKey: Keys.automation) as? Bool ?? false
         self.developerModeEnabled = defaults.object(forKey: Keys.developerMode) as? Bool ?? false
+        self.aiLearningEnabled = defaults.object(forKey: Keys.aiLearning) as? Bool ?? true
+        self.aiConfidenceThreshold = defaults.object(forKey: Keys.aiConfidence) as? Double ?? 55
+        let insightRaw = defaults.string(forKey: Keys.aiInsightDetail) ?? AIInsightDetail.standard.rawValue
+        self.aiInsightDetail = AIInsightDetail(rawValue: insightRaw) ?? .standard
+        let predRaw = defaults.string(forKey: Keys.aiPredictionFreq) ?? AIPredictionFrequency.normal.rawValue
+        self.aiPredictionFrequency = AIPredictionFrequency(rawValue: predRaw) ?? .normal
+        let notifyRaw = defaults.string(forKey: Keys.aiNotifyStyle) ?? AINotificationStyle.smart.rawValue
+        self.aiNotificationStyle = AINotificationStyle(rawValue: notifyRaw) ?? .smart
+        self.aiDeveloperReasoning = defaults.object(forKey: Keys.aiDevReasoning) as? Bool ?? false
     }
 }

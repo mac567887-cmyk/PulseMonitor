@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schemaVersion", "platform", "generatedAt", "hardware", "metrics", "analysis"],
   "properties": {
-    "schemaVersion": { "const": "4.0.0" },
+    "schemaVersion": { "const": "5.0.0" },
     "platform": { "enum": ["macOS", "Windows"] },
     "generatedAt": { "type": "string", "format": "date-time" },
     "hardware": {

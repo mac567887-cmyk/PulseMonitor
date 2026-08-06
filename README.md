@@ -9,18 +9,39 @@ machine is slow — without inventing sensors.
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4)
 ![Privacy](https://img.shields.io/badge/Telemetry-None-success)
 
+## Version 5.0 — Athena (AI Intelligence)
+
+PulseMonitor becomes an intelligent system companion via the **Performance
+Intelligence Engine (PIE)** — fully offline, evidence-backed, never fabricating
+sensors.
+
+| PIE module | Role |
+|------------|------|
+| Insight | Explains *why* CPU/GPU/RAM/disk behave as measured |
+| Prediction | 5 / 15 / 30 / 60 min trend estimates (labeled) |
+| Recommendation | Optimization advice — never auto-applied |
+| Pattern | Anomaly detection vs local habits |
+| Timeline Intelligence | Explains major metric changes |
+| Optimization | Optimization scorecard |
+| Natural Language | Ask “Why is my Mac hot?” against live data |
+| Learning | On-device habit baselines only |
+| Report Generator | Daily briefing from the sample buffer |
+| Knowledge | Sensor encyclopedia with current status |
+
+Open **AI Copilot** in the sidebar for System Mood, bottlenecks, predictions,
+NL search, timeline, briefing, and developer reasoning.
+
 ## Version 4.0 — Windows Edition
 
-PulseMonitor is now a true cross-platform suite:
+PulseMonitor is a cross-platform suite:
 
 | OS | UI | Hardware layer |
 |----|----|----------------|
 | **macOS 14+** | SwiftUI | IOKit / Mach / sysctl / Metal / SMC |
-| **Windows 10/11** | WinUI 3 / Windows App SDK | PDH / WMI / Win32 / Event Log / DXGI hints |
+| **Windows 10/11** | WPF (+ WinUI project) | PDH / WMI / Win32 / Event Log |
 
-Shared contracts live in [`Shared/`](Shared/ARCHITECTURE.md): report schema **4.0.0**,
-sync profiles, and capability tables. Reports and sync bundles are interchangeable
-across platforms; native plugins remain per-OS.
+Shared contracts live in [`Shared/`](Shared/ARCHITECTURE.md): report schema **5.0.0**,
+sync profiles, and capability tables.
 
 ### Windows modules
 

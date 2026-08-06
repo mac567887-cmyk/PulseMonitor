@@ -48,7 +48,7 @@ public struct CrossPlatformReport: Sendable, Codable {
     public static func from(payload: ReportExporter.ReportPayload) -> CrossPlatformReport {
         let m = payload.metrics
         return CrossPlatformReport(
-            schemaVersion: "4.0.0",
+            schemaVersion: "5.0.0",
             platform: "macOS",
             generatedAt: payload.generatedAt,
             hardware: .init(

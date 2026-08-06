@@ -36,6 +36,7 @@ public final class AppContainer {
     public let widgetBoardStore: WidgetBoardStore
     public let liveWallpaperService: LiveWallpaperService
     public let v3: V3Session
+    public let athena: AthenaSession
 
     public let dashboardViewModel: DashboardViewModel
     public let cpuViewModel: CPUViewModel
@@ -166,6 +167,7 @@ public final class AppContainer {
         let v3 = V3Session()
         v3.bind(collector: collector)
         self.v3 = v3
+        self.athena = AthenaSession()
 
         collector.automationEngine = automation
         collector.eventLog = eventLog

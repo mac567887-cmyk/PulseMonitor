@@ -233,6 +233,27 @@ public struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section("Athena AI (PIE)") {
+                Toggle("On-device Learning", isOn: $viewModel.settings.aiLearningEnabled)
+                Toggle("Show PIE Reasoning", isOn: $viewModel.settings.aiDeveloperReasoning)
+                Picker("Insight Detail", selection: $viewModel.settings.aiInsightDetail) {
+                    ForEach(AppSettings.AIInsightDetail.allCases) { Text($0.displayName).tag($0) }
+                }
+                Picker("Prediction Frequency", selection: $viewModel.settings.aiPredictionFrequency) {
+                    ForEach(AppSettings.AIPredictionFrequency.allCases) { Text($0.displayName).tag($0) }
+                }
+                Picker("Notification Style", selection: $viewModel.settings.aiNotificationStyle) {
+                    ForEach(AppSettings.AINotificationStyle.allCases) { Text($0.displayName).tag($0) }
+                }
+                VStack(alignment: .leading) {
+                    Text("Confidence Threshold: \(Int(viewModel.settings.aiConfidenceThreshold))%")
+                    Slider(value: $viewModel.settings.aiConfidenceThreshold, in: 30...90, step: 5)
+                }
+                Text("Athena runs fully offline. Habits stay in Application Support. Predictions are trend estimates labeled as such — never fabricated sensors.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
     }
